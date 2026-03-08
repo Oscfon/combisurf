@@ -430,13 +430,26 @@ class OrientedMap:
             raise ValueError(f"inactive edge e={e}")
         return e
 
-    def graph(self, oriented=False, subdivide=True, root=None):
+    @staticmethod
+    def _subdivide_false(u, v, half_edge_list, h):
+        return 0
+
+    @staticmethod
+    def _subdivide_true(u, v, half_edge_list, h):
+        if u == v:
+            return 2
+        elif len(half_edge_list) > 1:
+            return 1
+        else:
+            return 0
+
+    def graph(self, directed=False, subdivide=True, root=None):
         r"""
         Return the sage graph, the embedding and the root edge associated to this map.
 
         INPUT:
 
-        - ``oriented`` (boolean, default ``False``) -- whether to return a SageMath
+        - ``directed`` (boolean, default ``False``) -- whether to return a SageMath
           ``Graph`` or ``DiGraph``
 
         - ``subdivide`` (boolean, default ``False``) -- if ``True`` then insert
@@ -446,11 +459,23 @@ class OrientedMap:
         - ``root`` (``None`` or a valid half-edge) -- if specified, it should be
           a half-edge that is used to identify the external face in planar drawings
 
+        OUTPUT: a 4-tuple ``(G, embedding, root_edge, edge_vertices)`` made of
+
+        - a SageMath graph ``G``
+
+        - the embedding of ``G`` given as a dictionary of cyclic ordering of neighborhoods
+
+        - the root edge as a pair of vertices in ``G``
+
+        - a list of lists of vertices of ``G`` where the list at position ``e`` is
+          the list of vertices on ``G`` that are on the path representing the edge ``e``
+          in this oriented map
+
         EXAMPLES::
 
             sage: from topsurf import OrientedMap
             sage: m = OrientedMap(vp="(0,~2)(~0,3,1)(~1,~5,2)(~3,4)(~4,5)")
-            sage: G, em, root = m.graph()
+            sage: G, em, root, edge_list = m.graph()
             sage: pos = G.layout_planar(on_embedding=em, external_face=root)
             sage: G.plot(pos=pos, vertex_labels=False, edge_labels=True)
             Graphics object consisting of ... graphics primitives
@@ -460,91 +485,92 @@ class OrientedMap:
             raise NotImplementedError
 
         if root is None:
-            root = len(self._vp)-2
+            root = len(self._vp) - 2
+
+        if subdivide is True:
+            subdivide = self._subdivide_true
+        elif subdivide is False:
+            subdivide = self._subdivide_false
+        elif isinstance(subdivide, numbers.Integral):
+            k = int(subdivide)
+            if k < 0:
+                raise ValueError("subdivide can not be a negative integer")
+            subdivide = lambda u, v, half_edge_list, h: k
+        elif not callable(subdivide):
+            raise TypeError("subdivide must be a boolean or a callable")
 
         vertices = self.vertices()
-        half_edge_start = [-1] * (2 * len(self._vp))
+        half_edge_to_vertex = [-1] * (2 * len(self._vp))
         for i, v in enumerate(vertices):
-            for j in v:
-                half_edge_start[j] = i
+            for h in v:
+                half_edge_to_vertex[h] = i
 
+        # cyclic ordering of neighbors (to specify embedding for SageMath graphs)
         embedding = {}
 
-        if oriented:
+        if directed:
             from sage.graphs.digraph import DiGraph
             G = DiGraph(len(vertices), multiedges=not subdivide, loops=not subdivide)
         else:
             from sage.graphs.graph import Graph
             G = Graph(len(vertices), multiedges=not subdivide, loops=not subdivide)
 
-        edges = collections.defaultdict(list)
+        # group half edges depending on their endpoints
+        half_edges = collections.defaultdict(list)
         for e in range(len(self._vp) // 2):
-            u = half_edge_start[2 * e]
-            v = half_edge_start[2 * e + 1]
-            if not oriented and v > u:
-                u, v = v, u
-            edges[(u, v)].append(e)
+            u = half_edge_to_vertex[2 * e]
+            v = half_edge_to_vertex[2 * e + 1]
+            if u <= v:
+                half_edges[(u, v)].append(2 * e)
+            else:
+                half_edges[(v, u)].append(2 * e + 1)
 
-        half_edge_end = [half_edge_start[h ^ 1] for h in range(len(self._vp))]
+        edge_vertices = [None] * (len(self._vp) // 2)
+        for (u, v), half_edge_list in half_edges.items():
+            for h in half_edge_list:
+                k = subdivide(u, v, half_edge_list, h)
+                e = h // 2
+                edge_vertices[e] = [u] + [G.add_vertex() for _ in range(k)] + [v]
+                if h % 2:
+                    edge_vertices[e].reverse()
 
-        edge_vertices=[None]*(len(self._vp)//2)
-        if subdivide:
-            loops = []
-            multiple_edges = []
-            for (u, v), edge_list in edges.items():
-                if u == v:
-                    # subdivide in three
-                    for e in edge_list:
-                        w0 = G.add_vertex()
-                        w1 = G.add_vertex()
-                        G.add_edge(u, w0, e)
-                        G.add_edge(w0, w1, e)
-                        G.add_edge(w1, u, e)
-                        embedding[w0] = [u, w1]
-                        embedding[w1] = [v, w0]
-                        half_edge_end[2 * e] = w0
-                        half_edge_end[2 * e + 1] = w1
-                        edge_vertices[e] = [u, w0, w1, u]
-                elif len(edge_list) > 1:
-                    # subdivide in two
-                    for e in edge_list:
-                        w = G.add_vertex()
-                        G.add_edge(u, w, e)
-                        G.add_edge(w, v, e)
-                        embedding[w] = [u, v]
-                        half_edge_end[2 * e] = w
-                        half_edge_end[2 * e + 1] = w
-                        edge_vertices[e] = [u, w, v]
-                else:
-                    e, = edge_list
-                    G.add_edge(u, v, e)
-                    edge_vertices[e] = [u, v]
-        else:
-            for e in range(0, len(self._vp) // 2):
-                G.add_edge(half_edge_start[2 * e], half_edge_start[2 * e + 1], e)
+                for i in range(k + 1):
+                    G.add_edge(edge_vertices[e][i], edge_vertices[e][i + 1], e)
 
-        root_edge = (half_edge_start[root], half_edge_end[root])
+                # embedding of subdivisions
+                for i in range(1, k + 1):
+                    embedding[edge_vertices[e][i]] = [edge_vertices[e][i-1], edge_vertices[e][i+1]]
 
+        # embedding of vertices of the original map
         for i, v in enumerate(vertices):
-            embedding[i] = []
-            for j in reversed(v):
-                embedding[i].append(half_edge_end[j])
+            neighborhood = []
+            for h in v:
+                e = h // 2
+                if h % 2 == 0:
+                    neighborhood.append(edge_vertices[e][1])
+                else:
+                    neighborhood.append(edge_vertices[e][-2])
+            embedding[i] = neighborhood
+
+        if root % 2:
+            root_edge = edge_vertices[root // 2][:2]
+        else:
+            root_edge = edge_vertices[root // 2][-2:]
 
         return G, embedding, root_edge, edge_vertices
 
-    def plot(self, oriented=False, subdivide=True, root=None, edge_labels=True, vertex_colors=None, edge_colors=None):
+    def plot(self, directed=False, subdivide=True, root=None, edge_labels=True, vertex_colors=None, edge_colors=None):
         r"""
         Plot the map.
 
         INPUT:
-            - ``oriented``: boolean specifying whether edge should be oriented.
-            - ``subdivide``: boolean specifying whether multiple edges and loop should be subdivided for pretty plotting.
-            - ``edge_labels``: boolean specifying whether to plot the labels of the edges.
-            - ``edge_colors``: dictionnary specifying the color to assign to each edge color.
-            - ``vertex_colors``: dictionnary specifying the color to assign to each vertex color.
 
+        - ``directed``, ``subdivide`` -- options forwarded to :meth:`graph`
+        - ``edge_labels``: boolean specifying whether to plot the labels of the edges.
+        - ``edge_colors``: dictionnary specifying the color to assign to each edge color.
+        - ``vertex_colors``: dictionnary specifying the color to assign to each vertex color.
         """
-        G, em, r, edge_list = self.graph(oriented=oriented, subdivide=subdivide, root=root)
+        G, em, r, edge_list = self.graph(directed=directed, subdivide=subdivide, root=root)
         pos = G.layout_planar(on_embedding=em, external_face=r)
         if vertex_colors is None:
             vertex_colors={'red':list(range(self.num_vertices()))}
