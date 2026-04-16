@@ -2,7 +2,7 @@ r"""
 This file provides the operations that appear in the gasket decomposition of 3-colored planar maps
 """
 
-from topsurf import *
+from combisurf import *
 
 def atomic_3colmap(color=0):
     return ColoredOrientedMap(vp=[], vcolors={-1:color}, mutable = True)

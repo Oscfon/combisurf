@@ -4,7 +4,7 @@ Homotopy test on maps
 This module introduced three classes: :class:`QuadSystems`, :class:`Geodesic` and :class:`Walk`.
 """
 # ****************************************************************************
-#  This file is part of topsurf
+#  This file is part of combisurf
 #
 #       Copyright (C) 2026 Oscar Fontaine
 #
@@ -24,7 +24,7 @@ This module introduced three classes: :class:`QuadSystems`, :class:`Geodesic` an
 # ****************************************************************************
 
 
-from topsurf import OrientedMap
+from combisurf import OrientedMap
 from collections import deque
 
 
@@ -476,7 +476,7 @@ class Geodesic:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap, QuadSystem, Geodesic
+            sage: from combisurf import OrientedMap, QuadSystem, Geodesic
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
@@ -515,7 +515,7 @@ class Geodesic:
         r"""
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap, QuadSystem, Geodesic
+            sage: from combisurf import OrientedMap, QuadSystem, Geodesic
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
@@ -533,7 +533,7 @@ class Geodesic:
         r"""
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap, QuadSystem, Geodesic
+            sage: from combisurf import OrientedMap, QuadSystem, Geodesic
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
@@ -553,7 +553,7 @@ class Geodesic:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap, QuadSystem, Geodesic
+            sage: from combisurf import OrientedMap, QuadSystem, Geodesic
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
@@ -619,7 +619,7 @@ class Geodesic:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap, QuadSystem, Geodesic
+            sage: from combisurf import OrientedMap, QuadSystem, Geodesic
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
@@ -685,7 +685,7 @@ class Geodesic:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap, QuadSystem, Geodesic
+            sage: from combisurf import OrientedMap, QuadSystem, Geodesic
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
@@ -904,7 +904,7 @@ class Geodesic:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap, QuadSystem, Geodesic
+            sage: from combisurf import OrientedMap, QuadSystem, Geodesic
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
@@ -1092,7 +1092,7 @@ class Walk:
         
         EXAMPLES::
         
-            sage: from topsurf import OrientedMap, QuadSystem, Geodesic, Walk
+            sage: from combisurf import OrientedMap, QuadSystem, Geodesic, Walk
             sage: m = OrientedMap(vp=[[0, 2, 4, 6],[7, 8, 5], [9, 10, 12, 11], [3, 15, 1, 13, 14]])
             sage: Q = QuadSystem(m)
             sage: w1 = Walk(Q, [])
@@ -1139,7 +1139,7 @@ class LazyGeodesic:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap, QuadSystem, LazyGeodesic
+            sage: from combisurf import OrientedMap, QuadSystem, LazyGeodesic
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
@@ -1184,7 +1184,7 @@ class LazyGeodesic:
         r"""
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap, QuadSystem, Geodesic
+            sage: from combisurf import OrientedMap, QuadSystem, Geodesic
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
@@ -1210,7 +1210,7 @@ class LazyGeodesic:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap, QuadSystem, LazyGeodesic
+            sage: from combisurf import OrientedMap, QuadSystem, LazyGeodesic
             sage: m = OrientedMap(vp=[[0, 2, 4, 6],[7, 8, 5], [9, 10, 12, 11], [3, 15, 1, 13, 14]])
             sage: Q = QuadSystem(m)
             sage: Q
@@ -1284,7 +1284,7 @@ class LazyGeodesic:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap, QuadSystem, LazyGeodesic
+            sage: from combisurf import OrientedMap, QuadSystem, LazyGeodesic
             sage: m = OrientedMap(vp=[[0, 2, 4, 6],[7, 8, 5], [9, 10, 12, 11], [3, 15, 1, 13, 14]])
             sage: Q = QuadSystem(m)
             sage: Q

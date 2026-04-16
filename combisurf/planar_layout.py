@@ -13,7 +13,7 @@ import numpy as np
 
 from sage.rings.real_double import RDF
 
-from topsurf.permutation import perm_orbit
+from combisurf.permutation import perm_orbit
 
 def orientation(x, y, i, j, k, tol=1e-9):
     r"""
@@ -21,7 +21,7 @@ def orientation(x, y, i, j, k, tol=1e-9):
 
     EXAMPLES::
 
-        sage: from topsurf.planar_layout import orientation
+        sage: from combisurf.planar_layout import orientation
 
     Third point on the left::
 
@@ -75,7 +75,7 @@ def are_segments_intersecting(x, y, i0, i1, j0, j1, tol=1e-9):
     r"""
     EXAMPLES::
 
-        sage: from topsurf.planar_layout import are_segments_intersecting
+        sage: from combisurf.planar_layout import are_segments_intersecting
         sage: are_segments_intersecting([-1,1,0,0],[0,0,-1,1],0,1,2,3)
         3
 
@@ -142,7 +142,7 @@ def angle(x, y, i, j, k, tol=1e-9):
 
     EXAMPLES::
 
-        sage: from topsurf.planar_layout import angle
+        sage: from combisurf.planar_layout import angle
         sage: angle([0, 1, 1], [0, 0, 1], 0, 1, 2)
         0.125
         sage: angle([0, 1, 0], [0, 0, 1], 0, 1, 2)
@@ -182,8 +182,8 @@ class PlanarLayout:
 
     EXAMPLES::
 
-        sage: from topsurf import OrientedMap
-        sage: from topsurf.planar_layout import PlanarLayout
+        sage: from combisurf import OrientedMap
+        sage: from combisurf.planar_layout import PlanarLayout
         sage: m = OrientedMap(vp="(0,~2)(~0,3,1)(~1,~5,2)(~3,4)(~4,5)")
         sage: pl = PlanarLayout(m)
         sage: pl.plot()    # default embedding from sage
@@ -238,16 +238,25 @@ class PlanarLayout:
             ans += arrow2d(p, p+f, *args, **kwds)
         return ans
 
-    def vertices(self):
-        return self._graph.vertices()
+    def plot_forces(self):
+        return (self.plot() +
+                self.plot_force(self.stretch_force(), color="green") +
+                self.plot_force(self.repulsion_force(), color="red") +
+                self.plot_force(self.spring_force(), color="blue"))
+
+    def vertices(self, internal=True, subdivisions=True):
+        if internal:
+            yield from range(self._num_nodes)
+        if subdivisions:
+            yield from range(self._num_nodes, self._graph.num_verts())
 
     def vertices_on_half_edge(self, h, include_start=True, include_end=False):
         r"""
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
-            sage: from topsurf import OrientedMap
-            sage: from topsurf.planar_layout import PlanarLayout
+            sage: from combisurf import OrientedMap
+            sage: from combisurf import OrientedMap
+            sage: from combisurf.planar_layout import PlanarLayout
             sage: m = OrientedMap(vp="(0,~2)(~0,3,1)(~1,~5,2)(~3,4)(~4,5)")
             sage: pl = PlanarLayout(m)
             sage: pl.vertices_on_half_edge(0)

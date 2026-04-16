@@ -5,7 +5,7 @@ The main class in this module is :class:`OrientedMap` which describes a
 cell decomposition of an oriented surface.
 """
 # ****************************************************************************
-#  This file is part of topsurf
+#  This file is part of combisurf
 #
 #       Copyright (C) 2018 Mark Bell
 #                     2018-2026 Vincent Delecroix
@@ -36,7 +36,7 @@ from array import array
 
 from sage.structure.richcmp import op_LT, op_LE, op_EQ, op_NE, op_GT, op_GE, rich_to_bool
 
-from topsurf.permutation import (perm_init, perm_check, perm_cycles, perm_on_array, perm_on_edge_array,
+from combisurf.permutation import (perm_init, perm_check, perm_cycles, perm_on_array, perm_on_edge_array,
                           perm_invert, perm_conjugate, perm_conjugate_transposition_inplace, perm_cycle_string, perm_cycles_lengths,
                           perm_cycles_to_string, perm_on_list, perm_on_edge_list, perm_cycle_type,
                           perm_num_cycles, str_to_cycles, str_to_cycles_and_data, perm_compose, perm_from_base64_str,
@@ -49,8 +49,8 @@ def check_relabelling(arg, ne):
     r"""
     EXAMPLES::
 
-        sage: from topsurf.oriented_map import check_relabelling
-        sage: from topsurf.permutation import perm_cycle_string
+        sage: from combisurf.oriented_map import check_relabelling
+        sage: from combisurf.permutation import perm_cycle_string
         sage: p = check_relabelling("(0,1,2)", 3)
         sage: perm_cycle_string(p, edge_like=True)
         '(0,1,2)(~0,~1,~2)'
@@ -124,7 +124,7 @@ class OrientedMap:
 
     EXAMPLES:
 
-        sage: from topsurf import OrientedMap
+        sage: from combisurf import OrientedMap
 
     The most user friendly way to initialize an ``OrientedMap`` is to use
     strings that describe the cycle decomposition of the vertex and face
@@ -154,7 +154,7 @@ class OrientedMap:
         sage: m = OrientedMap(vp="(0,~2,~1,~3,1,~0,3)(2)", fp="(0,1,~2,2)(~0,3,~1,~3)")
         sage: m.vertex_permutation()
         array('i', [5, 6, 1, 7, 4, 3, 0, 2])
-        sage: from topsurf.permutation import perm_cycle_string
+        sage: from combisurf.permutation import perm_cycle_string
         sage: perm_cycle_string(m.vertex_permutation())
         '(0,5,3,7,2,1,6)(4)'
 
@@ -331,7 +331,7 @@ class OrientedMap:
 
         By default, ``OrientedMap`` are immutable::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
             sage: m = OrientedMap(fp="(0,1,~1,~0)")
             sage: m.is_mutable()
             False
@@ -375,7 +375,7 @@ class OrientedMap:
 
         TESTS::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
             sage: OrientedMap("(0,1,~1)")._check_half_edge(0)
             0
             sage: OrientedMap("(0,1,~1)")._check_half_edge(-4)
@@ -473,7 +473,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
             sage: m = OrientedMap(vp="(0,~2)(~0,3,1)(~1,~5,2)(~3,4)(~4,5)")
             sage: G, em, root, edge_list = m.graph()
             sage: pos = G.layout_planar(on_embedding=em, external_face=root)
@@ -596,7 +596,7 @@ class OrientedMap:
         TESTS::
 
             sage: import itertools
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
             sage: ts = [OrientedMap(fp="(0,1,2)"), OrientedMap(fp="(0,1,2)(~0,~1,~2)"), OrientedMap(fp="(0,1,2)(~0,~2,~1)"), OrientedMap(fp="(0,~0,1)(~1,2,~2)")]
             sage: for t1, t2 in itertools.product(ts, repeat=2):
             ....:     c1 = t1._cmp_(t2)
@@ -616,7 +616,7 @@ class OrientedMap:
         EXAMPLES::
 
             sage: import itertools
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: ts = [OrientedMap("(0,1,2)"), OrientedMap("(0,1,2)(~0,~1,~2)"), OrientedMap("(0,~0,1)(~1,2,~2)")]
             sage: for m1, m2 in itertools.product(ts, repeat=2):
@@ -657,7 +657,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: m = OrientedMap([[0,2,4],[1,3,5]], mutable=True)
             sage: s = m.copy()
@@ -699,7 +699,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
             sage: sphere = OrientedMap(fp="(0,1,2)(~0,~2,~1)")
             sage: sphere.vertex_permutation()
             array('i', [5, 2, 1, 4, 3, 0])
@@ -721,7 +721,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: m = OrientedMap(fp="(~11,4,~3)(~10,~0,11)(~9,0,10)(~8,9,1)(~7,8,~1)(~6,7,2)(~5,6,~2)(~4,5,3)")
             sage: m.next_at_vertex(0)
@@ -741,7 +741,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: m = OrientedMap(fp="(~11,4,~3)(~10,~0,11)(~9,0,10)(~8,9,1)(~7,8,~1)(~6,7,2)(~5,6,~2)(~4,5,3)")
             sage: m.previous_at_vertex(9)
@@ -761,7 +761,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: OrientedMap(fp="(0,1,2)(~0,~1,~2)").edge_permutation()
             array('i', [1, 0, 3, 2, 5, 4])
@@ -777,7 +777,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: m = OrientedMap(vp="(0)(~0,1,2)")
             sage: m.next_in_edge(0)
@@ -801,7 +801,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: sphere = OrientedMap(fp="(0,1,2)(~0,~2,~1)")
             sage: sphere.face_permutation()
@@ -824,7 +824,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: m = OrientedMap(fp="(0,1,2)(~1,3,4)")
             sage: m.next_in_face(0)
@@ -848,7 +848,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: m = OrientedMap(fp="(~11,4,~3)(~10,~0,11)(~9,0,10)(~8,9,1)(~7,8,~1)(~6,7,2)(~5,6,~2)(~4,5,3)")
             sage: m.previous_in_face(10)
@@ -868,7 +868,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: list(OrientedMap(fp="(0,1,2)(~1,3,4)").half_edges())
             [0, 2, 3, 4, 6, 8]
@@ -885,7 +885,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: OrientedMap(fp="(0,1,2)(~1,3,4)").num_half_edges()
             6
@@ -900,7 +900,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: OrientedMap(fp="(0,1,2)(~0,~1,~2)").has_folded_edge()
             False
@@ -919,7 +919,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: list(OrientedMap(fp="(0,1,2)(~0,~1,~2)").folded_half_edges())
             []
@@ -939,7 +939,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: OrientedMap(fp="(0,1,2)(~0,~1,~2)").num_folded_edges()
             0
@@ -958,7 +958,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: OrientedMap(fp="(0,1,2)(~0,~1,~2)").num_edges()
             3
@@ -975,7 +975,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: OrientedMap(fp="(0,1,2)(3,4,5)(~0,~3,6)").edge_indices()
             [0, 1, 2, 3, 4, 5, 6]
@@ -990,7 +990,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: m = OrientedMap(fp="(0,1,2)(3,4,5)(~0,~3,6)")
             sage: m.vertices()
@@ -1007,7 +1007,7 @@ class OrientedMap:
         r"""
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: OrientedMap("(0,3)(~0,1,~3,~1)").vertex_profile()
             [2, 4]
@@ -1022,7 +1022,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: OrientedMap(fp="(0,1,2)(3,4,5)(~0,~3,6)").num_vertices()
             1
@@ -1042,7 +1042,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: m = OrientedMap(fp="(0,1,2)(3,4,5)(~3,6)")
             sage: m.faces()
@@ -1061,7 +1061,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: OrientedMap("(0,3)(~0,1,~3,~1)").face_profile()
             [6]
@@ -1076,7 +1076,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: OrientedMap(fp="(0,1,2)(3,4,5)(~0,~3,6)").num_faces()
             3
@@ -1095,7 +1095,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: m = OrientedMap(vp="(0,1,2)(3,4,5)(~0,~3,6)")
             sage: m.vertex_degree(2)
@@ -1113,7 +1113,7 @@ class OrientedMap:
 
         EXAMPLES:
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: m.vertex_turn(3, 7)
@@ -1138,7 +1138,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: m = OrientedMap(vp="(0,1,2)(3,4,5)(~0,~3,6)")
             sage: m.face_degree(2)
@@ -1156,7 +1156,7 @@ class OrientedMap:
 
         EXAMPLES:
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: m.face_turn(0, 8)
@@ -1181,7 +1181,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: OrientedMap(fp="(0,1,2)(3,4,5)(~0,~3,6)").is_connected()
             True
@@ -1200,7 +1200,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: m = OrientedMap(fp="(0,1,3)(~0,~1,~3)(2,4,5)(~2,~4,~5)")
             sage: m.connected_components()
@@ -1236,7 +1236,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: t = OrientedMap(fp="(0,1,2)(~0,3,4)(~1,~3,5)(~2,~5,6)(~7,~6,7)")
             sage: t.submap([0, 3, 5])
@@ -1295,7 +1295,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: m = OrientedMap(fp="(0,1,3)(~0,~1,~3)(2,4,5)(~2,~4,~5)")
             sage: list(m.connected_components_submaps())
@@ -1314,7 +1314,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
         Spheres::
 
@@ -1356,7 +1356,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
             sage: OrientedMap(fp="(0,1,2)").genus()
             0
             sage: OrientedMap(fp="(0,1,~0,~1)").genus()
@@ -1406,7 +1406,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
             sage: m = OrientedMap("(0,~0,1,~1)", "(0)(1)(~0,~1)", mutable=True)
             sage: m.swap(0, 1)
             sage: m
@@ -1451,7 +1451,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: vp = "(0,1,~0,~1)"
             sage: fp = "(0,1,~0,~1)"
@@ -1612,7 +1612,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: vp = "(0,1,~0,~1)"
             sage: fp = "(0,1,~0,~1)"
@@ -1745,7 +1745,7 @@ class OrientedMap:
 
         EXAMPLES:
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
         We start from a torus and triangulate it by adding an edge in the middle of the face::
 
@@ -1855,7 +1855,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
             sage: m = OrientedMap(fp="(0,1,~0,~1)", mutable=True)
             sage: m.insert_edge(0, 1)
             sage: m
@@ -1959,7 +1959,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: m = OrientedMap(fp="(0,1,2)(~0,~1,~2)", mutable=True)
             sage: m.reverse_orientation(0)
@@ -2022,7 +2022,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: m =OrientedMap("(0,5,3,~3)(~0)", "(0,~0,~3,5)(3)", mutable=True)
             sage: m.relabel("(0,~0)")
@@ -2076,7 +2076,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
         We start from a 5-gon and triangulate first one of its faces and then
         the other one::
@@ -2110,8 +2110,7 @@ class OrientedMap:
             ...
             ValueError: immutable graph; make a mutable copy first
         """
-        if not self._mutable:
-            raise ValueError("immutable graph; make a mutable copy first")
+        self._assert_mutable()
 
         if h is None:
             for f in self.faces():
@@ -2768,7 +2767,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
             sage: G = OrientedMap(vp=[[0,1,2,3]])
             sage: G
             OrientedMap("(0,~0,1,~1)", "(0)(~0,~1)(1)")
@@ -2811,7 +2810,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
             sage: G = OrientedMap(vp=[[0, 2, 4, 6], [1], [3], [5], [7]], mutable=True)
             sage: G.smoothing(0)
             sage: G
@@ -2877,7 +2876,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
             sage: M = OrientedMap(vp=[1, 0], mutable=True)
             sage: edge = OrientedMap(vp=[0, 1])
             sage: triangle = OrientedMap(vp=[3, 4, 5, 0, 1, 2])
@@ -2905,7 +2904,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
             sage: M = OrientedMap(vp=[0, 2, 1, 4, 3, 5], mutable=True)
             sage: M
             OrientedMap("(0,~0,1,~2)(~1,2)", "(0)(~0,~2,~1)(1,2)")
@@ -2936,7 +2935,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
 
             sage: G = OrientedMap(vp = [[0, 4, 2], [1], [3], [5]], mutable=True)
             sage: G.move_half_edge(4, 1)
@@ -2984,7 +2983,7 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
             sage: m = OrientedMap(vp=[[0,1,2], [3]])
             sage: m.turn_around_vertex(0, 2)
             2

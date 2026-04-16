@@ -1,5 +1,5 @@
 [project]
-name = "topsurf"
+name = "combisurf"
 version = "0.1.0"
 authors = [
   {name = "Vincent Delecroix"},
@@ -27,7 +27,7 @@ build-backend = "hatchling.build"
 dependencies = ["hatch-cython"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["topsurf"]
+packages = ["combisurf"]
 
 [tool.hatch.build.targets.wheel.hooks.cython.options]
 # Include directories for .h or .cpp files

@@ -2,7 +2,7 @@ r"""
 This file provides the stadart operations that appear in the recursive decomposition of planar maps.
 """
 
-from topsurf import *
+from combisurf import *
 
 def atomic():
     OrientedMap(vp=[], mutable = True)
@@ -17,7 +17,7 @@ def bridge(m1, m2, r1=None, r2=None, check=True):
 
     EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
             sage: M1 = OrientedMap(vp = [3, 4, 5, 0, 1, 2], mutable=True)
             sage: M2 = OrientedMap(vp = [2, 3, 0, 1])
             sage: bridge(M1, M2)
@@ -56,7 +56,7 @@ def peninsula(m1, m2, r1=None, r2=None, check=True):
     
     EXAMPLES::
 
-            sage: from topsurf import OrientedMap
+            sage: from combisurf import OrientedMap
             sage: M1 = OrientedMap(vp = [3, 4, 5, 0, 1, 2], mutable=True)
             sage: M2 = OrientedMap(vp = [2, 3, 0, 1])
             sage: peninsula(M1, M2)
