@@ -14,7 +14,7 @@ TODO:
   where each list is a slice content[bouds[i]:bounds[i+1]].
 """
 # ****************************************************************************
-#  This file is part of topsurf
+#  This file is part of combisurf
 #
 #       Copyright (C) 2018 Mark Bell
 #                     2018-2026 Vincent Delecroix
@@ -75,7 +75,7 @@ def argmin(l):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import argmin
+        sage: from combisurf.permutation import argmin
         sage: argmin([3, 0, 1, 2])
         1
         sage: argmin([-1, 3, 5, -2, 50])
@@ -100,7 +100,7 @@ def least_rotation(S):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import least_rotation
+        sage: from combisurf.permutation import least_rotation
 
         sage: least_rotation([1,0])
         (1, 2)
@@ -160,7 +160,7 @@ def perm_check(l, int n=-1, involution=None):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import perm_check
+        sage: from combisurf.permutation import perm_check
         sage: from array import array
 
     Good permutations::
@@ -221,7 +221,7 @@ def perm_id(int n):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import perm_id
+        sage: from combisurf.permutation import perm_id
 
         sage: perm_id(4)
         array('i', [0, 1, 2, 3])
@@ -240,7 +240,7 @@ def perm_init(data, int n=-1, edge_like=False, partial=False):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import perm_init
+        sage: from combisurf.permutation import perm_init
 
     As a list of integers::
 
@@ -319,7 +319,7 @@ def perm_from_cycles(t, int n=-1, edge_like=False, partial=False):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import perm_from_cycles
+        sage: from combisurf.permutation import perm_from_cycles
 
         sage: perm_from_cycles([[1,3,5],[0,2,4],[6]])
         array('i', [2, 3, 4, 5, 0, 1, 6])
@@ -390,7 +390,7 @@ def str_to_int(c):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import str_to_int
+        sage: from combisurf.permutation import str_to_int
         sage: str_to_int("3")
         3
         sage: str_to_int("~2")
@@ -416,7 +416,7 @@ def str_to_cycles(s):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import str_to_cycles
+        sage: from combisurf.permutation import str_to_cycles
         sage: str_to_cycles("(0,1)(3,2)")
         [[0, 1], [3, 2]]
 
@@ -441,7 +441,7 @@ def str_to_cycles_and_data(s):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import str_to_cycles_and_data
+        sage: from combisurf.permutation import str_to_cycles_and_data
         sage: str_to_cycles_and_data('(0:1,1:2)')
         ([[0, 1]], {0: 1, 1: 2})
         sage: str_to_cycles_and_data('(0:1,1:2)(3:0)')
@@ -494,7 +494,7 @@ def perm_random(int n):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import perm_random, perm_check
+        sage: from combisurf.permutation import perm_random, perm_check
         sage: perm_check(perm_random(13), 13)
         True
     """
@@ -509,7 +509,7 @@ def perm_random_centralizer(p):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import *
+        sage: from combisurf.permutation import *
         sage: p = perm_random(10)
         sage: q = perm_random_centralizer(p)
         sage: perm_compose(p, q) == perm_compose(q, p)
@@ -549,7 +549,7 @@ def perm_random_conjugacy_class(c):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import perm_random_conjugacy_class, perm_cycle_type
+        sage: from combisurf.permutation import perm_random_conjugacy_class, perm_cycle_type
 
         sage: p = perm_random_conjugacy_class([5, 2])
         sage: perm_cycle_type(p)
@@ -583,7 +583,7 @@ def uint_base64_str(n, l=None):
     r"""
     EXAMPLES::
 
-        sage: from topsurf.permutation import uint_base64_str
+        sage: from combisurf.permutation import uint_base64_str
 
         sage: uint_base64_str(15)
         'f'
@@ -609,7 +609,7 @@ def uint_from_base64_str(s):
     r"""
     EXAMPLES::
 
-        sage: from topsurf.permutation import uint_from_base64_str, uint_base64_str
+        sage: from combisurf.permutation import uint_from_base64_str, uint_base64_str
 
         sage: uint_from_base64_str('mqb')
         91787
@@ -633,7 +633,7 @@ def perm_base64_str(p):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import perm_base64_str, perm_from_base64_str
+        sage: from combisurf.permutation import perm_base64_str, perm_from_base64_str
         sage: from array import array
 
         sage: perm_base64_str([3,1,0,2])
@@ -661,7 +661,7 @@ def perm_from_base64_str(s, n):
     r"""
     EXAMPLES::
 
-        sage: from topsurf.permutation import perm_from_base64_str, perm_base64_str
+        sage: from combisurf.permutation import perm_from_base64_str, perm_base64_str
         sage: from array import array
 
         sage: p = array('i', [3,0,2,1])
@@ -710,7 +710,7 @@ def perm_dense_cycles(array.array p, int n=-1):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_dense_cycles
+        sage: from combisurf.permutation import perm_dense_cycles
 
         sage: perm_dense_cycles(array('i', [1,2,0]))
         array('i', [0, 0, 0])
@@ -750,7 +750,7 @@ def perm_cycles(array.array p, singletons=True, int n=-1):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_cycles
+        sage: from combisurf.permutation import perm_cycles
 
         sage: perm_cycles(array('i', [0,2,1]))
         [[0], [1, 2]]
@@ -803,7 +803,7 @@ def perm_cycles_lengths(array.array p, int n=-1):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_cycles_lengths
+        sage: from combisurf.permutation import perm_cycles_lengths
 
         sage: perm_cycles_lengths(array('i', [0,2,1]))
         array('i', [1, 2, 2])
@@ -843,7 +843,7 @@ def perm_num_cycles(array.array p, n=-1):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_num_cycles
+        sage: from combisurf.permutation import perm_num_cycles
 
         sage: perm_num_cycles(array('i', [1,2,3,0]))
         1
@@ -880,7 +880,7 @@ def perm_cycle_type(array.array p, int n=-1):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_cycle_type
+        sage: from combisurf.permutation import perm_cycle_type
         sage: perm_cycle_type(array('i', [1,2,3,0]))
         [4]
         sage: perm_cycle_type(array('i', [0,2,3,1]))
@@ -917,7 +917,7 @@ def perm_order(array.array p, int n=-1):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import perm_init, perm_order
+        sage: from combisurf.permutation import perm_init, perm_order
         sage: p = perm_init("(1,3)(2,4,6)(5)")
         sage: perm_order(p)
         6
@@ -931,7 +931,7 @@ def perm_is_involution(array.array p, int n=-1):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import perm_init, perm_is_involution
+        sage: from combisurf.permutation import perm_init, perm_is_involution
         sage: perm_is_involution(perm_init('(0)(1)(2)'))
         False
         sage: perm_is_involution(perm_init('(0)(1,2)'))
@@ -991,7 +991,7 @@ def perm_cycle_string(array.array p, singletons=True, n=-1, edge_like=False):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_cycle_string
+        sage: from combisurf.permutation import perm_cycle_string
 
         sage: perm_cycle_string(array('i', [0, 2, 1]))
         '(0)(1,2)'
@@ -1011,7 +1011,7 @@ def perm_orbit(array.array p, int i):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_orbit
+        sage: from combisurf.permutation import perm_orbit
 
         sage: perm_orbit(array('i', [0,3,1,2]), 2)
         [2, 1, 3]
@@ -1034,7 +1034,7 @@ def perm_orbit_size(array.array p, int i):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_orbit_size
+        sage: from combisurf.permutation import perm_orbit_size
 
         sage: perm_orbit_size(array('i', [0,3,1,2]), 2)
         3
@@ -1059,7 +1059,7 @@ def perm_preimage(array.array p, int i):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_init, perm_preimage
+        sage: from combisurf.permutation import perm_init, perm_preimage
 
         sage: p = perm_init("(0,3,1,5)(2,4)")
         sage: perm_preimage(p, 3)
@@ -1091,7 +1091,7 @@ def perm_on_array(array.array dest, array.array src, array.array p, int n=-1):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import *
+        sage: from combisurf.permutation import *
 
         sage: l = array('i', [0, 1, 2, 3, 4])
         sage: p = array('i', [4, 2, 3, 0, 1])
@@ -1148,7 +1148,7 @@ def perm_on_list(l, array.array p, int n=-1, swap=None):
 
     Permutation action on matrix rows::
 
-        sage: from topsurf.permutation import perm_init, perm_compose, perm_on_list
+        sage: from combisurf.permutation import perm_init, perm_compose, perm_on_list
 
         sage: m1 = matrix(ZZ, 5, 5, 1)
         sage: m2 = matrix(ZZ, 5, 5, 1)
@@ -1214,7 +1214,7 @@ def perm_on_edge_array(array.array dest, array.array src, array.array p, int n=-
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import *
+        sage: from combisurf.permutation import *
 
         sage: p = array('i', [6, 7, 3, 2, 9, 8, 0, 1, 5, 4])
         sage: l = array('i', [0, 1, 2, 3, 4])
@@ -1284,7 +1284,7 @@ def perm_on_edge_list(array.array p, a, int n=-1, swap=None):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import *
+        sage: from combisurf.permutation import *
 
         sage: l = [0,1,2]
         sage: p = array('i', [3,2,0,1,5,4])
@@ -1333,7 +1333,7 @@ def perm_invert(array.array p, int n=-1):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_invert
+        sage: from combisurf.permutation import perm_invert
 
         sage: perm_invert(array('i', [0, 3, 1, 2]))
         array('i', [0, 2, 3, 1])
@@ -1363,7 +1363,7 @@ def perm_compose(array.array p1, array.array p2, int n=-1):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_compose
+        sage: from combisurf.permutation import perm_compose
 
         sage: perm_compose(array('i', [0,2,1]), array('i', [0,2,1]))
         array('i', [0, 1, 2])
@@ -1397,7 +1397,7 @@ def perm_pow(array.array p, int k, int n=-1):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_pow
+        sage: from combisurf.permutation import perm_pow
 
         sage: perm_pow(array('i', [3, 0, 1, 2]), 2)
         array('i', [2, 3, 0, 1])
@@ -1429,7 +1429,7 @@ def perm_compose_10(array.array p1, array.array p2, int n=-1):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_compose, perm_invert, perm_compose_10
+        sage: from combisurf.permutation import perm_compose, perm_invert, perm_compose_10
 
         sage: p1 = array('i', [0,5,2,1,3,4])
         sage: p2 = array('i', [3,1,5,4,2,0])
@@ -1456,7 +1456,7 @@ def perm_compose_01(array.array p1, array.array p2, int n=-1):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_compose, perm_invert, perm_compose_01
+        sage: from combisurf.permutation import perm_compose, perm_invert, perm_compose_01
 
         sage: p1 = array('i', [0,5,2,1,3,4])
         sage: p2 = array('i', [3,1,5,4,2,0])
@@ -1477,7 +1477,7 @@ def perm_compose_11(array.array p1, array.array p2, int n=-1):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_compose, perm_invert, perm_compose_11
+        sage: from combisurf.permutation import perm_compose, perm_invert, perm_compose_11
 
         sage: p1 = array('i', [0,5,2,1,3,4])
         sage: p2 = array('i', [3,1,5,4,2,0])
@@ -1490,7 +1490,7 @@ def perm_compose_11(array.array p1, array.array p2, int n=-1):
 
     TESTS::
 
-        sage: from topsurf.permutation import perm_invert, perm_compose
+        sage: from combisurf.permutation import perm_invert, perm_compose
         sage: from itertools import permutations
 
         sage: for p1 in permutations(range(4)):
@@ -1518,7 +1518,7 @@ def perm_conjugate(array.array p1, array.array p2, int n=-1):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_conjugate, perm_random
+        sage: from combisurf.permutation import perm_conjugate, perm_random
 
         sage: p1 = perm_random(23)
         sage: p2 = perm_random(23)
@@ -1626,7 +1626,7 @@ def perms_transitive_components(p, int n=-1):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import perms_transitive_components
+        sage: from combisurf.permutation import perms_transitive_components
 
         sage: perms_transitive_components([[1,0,2,3],[0,1,3,2]])
         [(0, 1), (2, 3)]
@@ -1672,7 +1672,7 @@ def perms_are_transitive(p, int n=-1):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import perms_are_transitive
+        sage: from combisurf.permutation import perms_are_transitive
         sage: perms_are_transitive([[0,1,2],[0,2,1]])
         False
         sage: perms_are_transitive([[0,1,2],[1,2,0]])
@@ -1732,7 +1732,7 @@ def perms_orbits(p, int n=-1):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import perm_init, perms_orbits
+        sage: from combisurf.permutation import perm_init, perms_orbits
 
         sage: p0 = perm_init("(0,1)(2,3)(4,5)(6,7)")
         sage: p1 = perm_init("(0,4)(1,5)(2,6)(3,7)")
@@ -1784,7 +1784,7 @@ def perm_edge_orbits(array.array p, int ne=-1):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import perm_init, perm_edge_orbits
+        sage: from combisurf.permutation import perm_init, perm_edge_orbits
 
         sage: p = perm_init([2, 6, 4, -1, 0, -1, 8, -1, 1, -1])
         sage: perm_edge_orbits(p)
@@ -1842,7 +1842,7 @@ def perms_relabel(p, m):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import perms_relabel
+        sage: from combisurf.permutation import perms_relabel
         sage: perms_relabel([[0,1,2],[0,2,1]],[2,1,0])
         [[0, 1, 2], [1, 0, 2]]
     """
@@ -1876,7 +1876,7 @@ def perms_canonical_labels_from(x, y, j0):
 
     EXAMPLES::
 
-        sage: from topsurf.permutation import perms_canonical_labels_from
+        sage: from combisurf.permutation import perms_canonical_labels_from
         sage: perms_canonical_labels_from([0,1,2],[[1,2,0]],0)
         [0, 1, 2]
         sage: perms_canonical_labels_from([1,0,2],[[2,0,1]],0)
@@ -2046,7 +2046,7 @@ def edge_relabelling_from(array.array relabelling, array.array pnew, array.array
 #     EXAMPLES::
 # 
 #         sage: from array import array
-#         sage: from topsurf.permutation import perms_relabelling_from
+#         sage: from combisurf.permutation import perms_relabelling_from
 #         sage: vp = array('i', [9, 13, 12, 11, 10, 14, 5, 6, 7, 8, 29, 25, 26, 27, 28, 1, 15, 16, 17, 18, 19, 0, 4, 3, 2, 21, 22, 23, 24, 20])
 #         sage: ep = array('i', [29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0])
 #         sage: relabelling = array('i', [-1] * 30)
@@ -2124,7 +2124,7 @@ def perm_relabel_on_edges(array.array r, int ne=-1):
     EXAMPLES::
 
         sage: from array import array
-        sage: from topsurf.permutation import perm_relabel_on_edges
+        sage: from combisurf.permutation import perm_relabel_on_edges
 
         sage: r = array('i', [3, 2, 4, 5, 1, 0, 7, 6])
         sage: perm_relabel_on_edges(r)

@@ -4,7 +4,7 @@ Vertex colored combinatorial maps
 The main class in this module is :class:`ColoredOrientedMap`.
 """
 # ****************************************************************************
-#  This file is part of topsurf
+#  This file is part of combisurf
 #
 #       Copyright (C) 2026 Juliette Schabanel
 #
@@ -23,8 +23,8 @@ The main class in this module is :class:`ColoredOrientedMap`.
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 # ****************************************************************************
 
-from topsurf import OrientedMap
-from topsurf.permutation import (perm_cycles, perm_cycles_to_string, perm_orbit)
+from combisurf import OrientedMap
+from combisurf.permutation import (perm_cycles, perm_cycles_to_string, perm_orbit)
 from collections import defaultdict
 
 class ColoredOrientedMap(OrientedMap):
@@ -196,7 +196,7 @@ class ColoredOrientedMap(OrientedMap):
 
         EXAMPLES::
 
-            sage: from topsurf import ColoredOrientedMap
+            sage: from combisurf import ColoredOrientedMap
             sage: M = ColoredOrientedMap(vp=[3, 4, 5, 0, 1, 2], vcolors={0:0, 1:2, 3:None}, ecolors = [5, None, 'a'], mutable=True)
             sage: M.add_edge(0, 2, e_color = 42)
             sage: M
@@ -231,7 +231,7 @@ class ColoredOrientedMap(OrientedMap):
 
         EXAMPLES::
 
-            sage: from topsurf import ColoredOrientedMap
+            sage: from combisurf import ColoredOrientedMap
             sage: M = ColoredOrientedMap(vp="(0, 1, 2)(~0, 3, ~3)(~1,~2)", vcolors={0:0, 1:2, 3:None}, ecolors = [5, 7, 11, 13], mutable=True)
             sage: M.insert_edge(0, 2, e_color=42)
             sage: M
@@ -285,7 +285,7 @@ class ColoredOrientedMap(OrientedMap):
         
         EXAMPLES::
 
-            sage: from topsurf import ColoredOrientedMap
+            sage: from combisurf import ColoredOrientedMap
             sage: M = ColoredOrientedMap(vp="(0, 1, 2)(~0, 3, ~3)(~1,~2)", vcolors={0:0, 1:2, 3:None}, ecolors = [5, 7, 11, 13], mutable=True)
             sage: M.contract_edge(1)
             sage: M
@@ -320,7 +320,7 @@ class ColoredOrientedMap(OrientedMap):
         
         EXAMPLES::
 
-            sage: from topsurf import ColoredOrientedMap
+            sage: from combisurf import ColoredOrientedMap
             sage: M = ColoredOrientedMap(vp="(0, 1, ~2)(~0, 3, ~3)(~1,2)", vcolors={0:0, 1:2, 3:None}, ecolors = [5, 7, 11, 13], mutable=True)
             sage: M.delete_edge(2)
             sage: M
@@ -339,7 +339,7 @@ class ColoredOrientedMap(OrientedMap):
 
         EXAMPLES::
 
-            sage: from topsurf import ColoredOrientedMap
+            sage: from combisurf import ColoredOrientedMap
             sage: M = ColoredOrientedMap(vp="(0, 1, 2)(~0, 3, ~3)(~1,~2)", vcolors={0:0, 1:2, 3:None}, ecolors = [5, 7, 11, 13], mutable=True)
             sage: M.reverse_orientation(1)
              ColoredOrientedMap("(0,~1,2)(~0,3,~3)(1,~2)", "(0,~3,~0,2,1)(~1,~2)(3)", 
@@ -365,7 +365,7 @@ class ColoredOrientedMap(OrientedMap):
 
         EXAMPLES::
 
-            sage: from topsurf import ColoredOrientedMap
+            sage: from combisurf import ColoredOrientedMap
             sage: M = ColoredOrientedMap(vp="(0,1,2)(~0,3,4,~4)(~1,~3,5)(~2,~5,6)(~7,~6,7)", vcolors={0:0, 1:1, 3:0, 5:1, 13:1}, ecolors=[i%2 for i in range(8)], mutable=True)
             sage: M.move_half_edge(9, 7)
             sage: M
@@ -422,7 +422,7 @@ class ColoredOrientedMap(OrientedMap):
 
         EXAMPLES::
         
-            sage: from topsurf import ColoredOrientedMap
+            sage: from combisurf import ColoredOrientedMap
             sage: M1 = ColoredOrientedMap(vp="(0, 1, 2)(~0, 3, ~3)(~1,~2)", vcolors={0:0, 1:2, 3:None}, ecolors = [5, 7, 11, 13], mutable=True)
             sage: M2 = ColoredOrientedMap(vp="(0, 1)(~0, ~1)", vcolors={0:True, 1:False}, ecolors = ['a', 'b'])
             sage: M1.disjoint_union(M2)
@@ -447,7 +447,7 @@ class ColoredOrientedMap(OrientedMap):
 
         EXAMPLES::
         
-            sage: from topsurf import ColoredOrientedMap
+            sage: from combisurf import ColoredOrientedMap
             sage: M = ColoredOrientedMap(vp="(0,1,2)(~0,3,~3)(~1,~2)(4,5)(~4,~5)", ecolors=[5, 7, 11, 13, 'a', 'b'], vcolors={0: 0, 1: 2, 3: True, 8: True, 9: False}, mutable = True)
             sage: M.merge_vertices(3, 8)
             sage: M
