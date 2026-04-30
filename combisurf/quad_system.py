@@ -1,7 +1,7 @@
 r"""
 Homotopy test on maps
 
-This module introduced three classes: :class:`QuadSystems`, :class:`Geodesic` and :class:`Walk`.
+This module introduced two classes: :class:`QuadSystem` and :class:`Geodesic`.
 """
 # ****************************************************************************
 #  This file is part of combisurf
@@ -314,44 +314,6 @@ def bracket_removal_left(Q, geo, s, positive, length, d):
             s.popleft()
         turn_modif_left(s, 1, d)
         turn_add_left(s, 2, length)
-
-
-def test_KMP(u, v):
-    r"""
-    Test if u is a subword of v in O(|u|+|v|).
-    """
-    if len(u) == 0:
-        return True
-    elif len(v) == 0:
-        return False
-    cnd = 0
-    T = [-1]
-    for i in range(1, len(u)):
-        if u[i] == u[cnd]:
-            T.append(u[cnd])
-        else:
-            T.append(cnd)
-            while cnd>=0 and u[i] == u[cnd]:
-                cnd = T[cnd]
-            cnd += 1
-    j = 0
-    k = 0
-    res = False
-    while j < len(v) and not res:
-        if u[k] == v[j]:
-            j += 1
-            k += 1
-            if k == len(u):
-                res = True
-        else:
-            k = T[k]
-            if k == -1:
-                k += 1
-                j += 1
-    return res
-
-
-
 
 
 class QuadSystem:
@@ -1078,105 +1040,6 @@ class Geodesic:
 
 
 
-class Walk:
-
-    # TODO : Documentation + Change name ?
-
-    def __init__(self, Q, walk):
-        r"""
-        Methods:
-            _quadsystem: the underlying quad system
-            _walk: the walk in the original OrientedMap (as a list)
-            _geodesic: the canonical geodesic representative of walk
-        """
-
-        self._quadsystem = Q
-        self._walk = walk
-        self._geodesic = Geodesic(Q)
-        for e in self._walk:
-            for f in Q._proj[e]:
-                self._geodesic.add_edge(f)
-        self._geodesic.canonical()
-
-    def __eq__(self, other):
-        return (self._quadsystem == other._quadsystem) and (self._walk == other._walk)
-
-    def is_homotopic(self, other):
-        r"""
-        Return whether self and other are freely homotopic.
-        
-        EXAMPLES::
-        
-            sage: from combisurf import OrientedMap, QuadSystem, Geodesic, Walk
-            sage: m = OrientedMap(vp=[[0, 2, 4, 6],[7, 8, 5], [9, 10, 12, 11], [3, 15, 1, 13, 14]])
-            sage: Q = QuadSystem(m)
-            sage: w1 = Walk(Q, [])
-            sage: w2 = Walk(Q, [4, 8, 11, 9, 7])
-            sage: w3 = Walk(Q, [6, 5])
-            sage: w1.is_homotopic(w2)
-            True
-            sage: w1.is_homotopic(w3)
-            False
-            sage: w4 = Walk(Q, [6, 8, 11, 9, 7])
-            sage: w5 = Walk(Q, [2, 15])
-            sage: w3.is_homotopic(w4)
-            True
-            sage: w3.is_homotopic(w5)
-            False
-            sage: w6 = Walk(Q, [11])
-            sage: w3.is_homotopic(w6)
-            True
-
-        """
-        if self._quadsystem != other._quadsystem:
-            raise ValueError("The quadsystems are different")
-        if len(self._geodesic) != len(other._geodesic):
-            return False
-
-        c = self._geodesic._geodesic.copy()
-        c.extend(c)
-        return test_KMP(other._geodesic._geodesic, c)
-
-
-    def simplicity(self, oriented_map, edge_to_vertex=None, quadsystem=None):
-
-        r"""
-        Return whether self lift into a simple walk in the universal covering.
-        """
-        
-        if not self._walk:
-            return True
-        elif len(self._walk)==2 and oriented_map._ep(self._walk[0]) == self._walk[1]:
-            return False
-        if quadsystem is None:
-            quadsystem = QuadSystem(oriented_map)
-        if edge_to_vertex is None:
-            edge_to_vertex = oriented_map.half_edges_to_vertices()
-
-        star = StarShapedSpace(quadsystem, edge_to_vertex[self._walk[0]])
-        seen_value = {} 
-        previous_vertex = 0
-        first_values = (0, edge_to_vertex[self._walk[0]])
-        seen_value[first_values] = True
-
-        for i in range(len(self._walk)):
-            edge = self._walk[i]
-            for elt in quadsystem._proj[edge]:
-                previous_vertex = star.insert_edge(previous_vertex, elt)
-            map_vertex = edge_to_vertex[oriented_map._ep(edge)]
-            if seen_value.get((previous_vertex, map_vertex)) is None:
-                seen_value[(previous_vertex, map_vertex)] = True
-                #print(seen_value)
-            elif i == len(self._walk) - 1 and (previous_vertex, map_vertex) == first_values:
-                return True
-            else:
-                #print(seen_value)
-                return False
-        return True
-
-
-
-
 class LazyGeodesic:
 
     # TODO : Documentation. Class of geodesic that contains only the first and the last edge and the sequence of turn. Should not be used to test homotopy ! Only contractibility.
@@ -1410,7 +1273,7 @@ class StarShapedSpace:
 
     def __init__(self, Q, root):
 
-        self._vertices = [root] #??
+        self._vertices = [root] # the projection of each vertex of the StarShapedSpace into the quadsystem
         self._quadsystem = Q # the underlying quadsystem
         self._inedges = [{}] # for each vertex a dictionnary containing the entering edges
         self._outedges = [[]] # for each vertex the list of (at most 2) outedges
