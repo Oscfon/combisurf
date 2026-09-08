@@ -190,9 +190,9 @@ class ColoredOrientedMap(OrientedMap):
 
     def add_edge(self, h0=-1, h1=-1, e=None, e_color=None, v0_color=None, v1_color=None, check=2):
         r"""
-        Add an edge between the corners of ``h0`` and ``h1`` with color ``col``. 
-        If ``h0``or ``h1`` is negative, then new vertices are created and their color can be specified in ``v0_color`` and ``v1_color``.
-        If self is atomic and ``v0_color``is not provided, the vertex keeps its color.
+        Add an edge between the corners of ``h0`` and ``h1`` with color ``col``.
+        If ``h0`` or ``h1`` is negative, then new vertices are created and their color can be specified in ``v0_color`` and ``v1_color``.
+        If self is atomic and ``v0_color`` is not provided, the vertex keeps its color.
 
         EXAMPLES::
 
@@ -227,7 +227,7 @@ class ColoredOrientedMap(OrientedMap):
 
     def insert_edge(self, h0=-1, h1=-1, e=None, e_color=None, v_color=None, check=2):
         r"""
-        Add an edge by spliting the vertex of ``h0``and ``h1``between them with color col. The two new vertices will have the same color as the original one.
+        Add an edge by spliting the vertex of ``h0`` and ``h1`` between them with color col. The two new vertices will have the same color as the original one.
 
         EXAMPLES::
 
