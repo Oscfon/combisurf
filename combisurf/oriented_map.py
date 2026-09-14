@@ -38,7 +38,7 @@ from sage.structure.richcmp import op_LT, op_LE, op_EQ, op_NE, op_GT, op_GE, ric
 
 from combisurf.misc import array_hash
 from combisurf.permutation import (perm_init, perm_check, perm_cycles, perm_on_array, perm_on_edge_array,
-                          perm_invert, perm_conjugate, perm_conjugate_transposition_inplace, perm_cycle_string, perm_cycles_lengths,
+                          perm_invert, perm_conjugate, perm_conjugate_transposition_inplace, perm_cycle_string, perm_dense_cycles, perm_cycles_lengths,
                           perm_cycles_to_string, perm_on_list, perm_on_edge_list, perm_cycle_type,
                           perm_num_cycles, str_to_cycles, str_to_cycles_and_data, perm_compose, perm_from_base64_str,
                           uint_base64_str, uint_from_base64_str, perm_base64_str,
@@ -1034,6 +1034,28 @@ class OrientedMap:
             return [[]]
         return perm_cycles(self._vp, True)
 
+    def half_edge_to_vertex(self):
+        r"""
+        Return an array whose element at index ``h`` is the vertex index
+        incident to the half-edge ``h``.
+
+        Inactive half-edges get the value ``-1``.
+
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+            sage: m = OrientedMap("(0,1,2)(~0,3,4)(~1,10,~8)(~2,7,~5)(~3,5,6)(~4,15,~13)(~6,16,~15)(~7,8,9)(~9,~12,~17)(~10,11,12)(~11,13,14)(~14,~16,17)", "(0,4,~13,~11,~10,~1)(~0,2,~5,~3)(1,~8,~7,~2)(3,6,~15,~4)(5,7,9,~17,~16,~6)(8,10,12,~9)(11,14,17,~12)(13,15,16,~14)")
+            sage: m.half_edge_to_vertex()
+            array('i', [0, 1, 0, 2, 0, 3, 1, 4, 1, 5, 4, 3, 4, 6, 3, 7, 7, 2, 7, 8, 2, 9, 9, 10, 9, 8, 10, 5, 10, 11, 5, 6, 6, 11, 11, 8])
+
+        An example with inactive half-edges::
+
+            sage: m = OrientedMap(vp="(2,1,5)(~1,~2,~5)")
+            sage: m.half_edge_to_vertex()
+            array('i', [-1, -1, 0, 1, 0, 1, -1, -1, -1, -1, 0, 1])
+        """
+        return perm_dense_cycles(self._vp)
+
     # TODO: to follow sage Graph convention, we may want to use
     # def vertex_degree(self, h=None)
     # def face_degree(self, h=None)
@@ -1100,6 +1122,28 @@ class OrientedMap:
         if not self._vp:
             return [[]]
         return perm_cycles(self._fp, True)
+
+    def half_edge_to_face(self):
+        r"""
+        Return an array whose element at index ``h`` is the face index
+        incident to the half-edge ``h``.
+
+        Inactive half-edges get the value ``-1``.
+
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+            sage: m = OrientedMap("(0,1,2)(~0,3,4)(~1,10,~8)(~2,7,~5)(~3,5,6)(~4,15,~13)(~6,16,~15)(~7,8,9)(~9,~12,~17)(~10,11,12)(~11,13,14)(~14,~16,17)", "(0,4,~13,~11,~10,~1)(~0,2,~5,~3)(1,~8,~7,~2)(3,6,~15,~4)(5,7,9,~17,~16,~6)(8,10,12,~9)(11,14,17,~12)(13,15,16,~14)")
+            sage: m.half_edge_to_face()
+            array('i', [0, 1, 2, 0, 1, 2, 3, 1, 0, 3, 4, 1, 3, 4, 4, 2, 5, 2, 4, 5, 5, 0, 6, 0, 5, 6, 7, 0, 6, 7, 7, 3, 7, 4, 6, 4])
+
+        An example with inactive half-edges::
+
+            sage: m = OrientedMap(vp="(2,1,5)(~1,~2,~5)")
+            sage: m.half_edge_to_face()
+            array('i', [-1, -1, 0, 1, 1, 2, -1, -1, -1, -1, 2, 0])
+        """
+        return perm_dense_cycles(self._fp)
 
     def face_profile(self, sort=False, reverse=True):
         r"""
@@ -1448,6 +1492,128 @@ class OrientedMap:
             # TODO: implement something less costly
             return [cc.genus() for cc in self.connected_components_submaps(relabel=True)]
 
+    def forest_coforest_decomposition(self, root_vertices=(0,), root_faces=(0,)):
+        r"""
+        Return a triple ``(forest, coforest, complementary_edges)`` with the
+        given roots.
+
+        This is the analogue of :meth:`tree_cotree_decomposition` with several
+        roots: the tree is replaced by a spanning forest with one tree per root
+        vertex and the cotree by a spanning coforest with one tree per root
+        face.
+
+        INPUT:
+
+        - ``root_vertices`` -- (default: ``(0,)``) the vertices the trees of
+          the forest are rooted at
+
+        - ``root_faces`` -- (default: ``(0,)``) the faces the trees of the
+          coforest are rooted at
+
+        OUTPUT: a triple ``(forest, coforest, complementary_edges)`` of arrays
+        of integers, in the format of :meth:`tree_cotree_decomposition`
+
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+            sage: m = OrientedMap(vp="(2,3,1,5,6,~5)(~1,4,~2,~6)(~3,7,~4,8)(~7,9,10,11,~9)(~8,~10,~11)")
+            sage: m.forest_coforest_decomposition((0,2,4), (1,))
+            (array('i', [-1, 8, -1, 20, -1]),
+             array('i', [2, -1, 7, 22]),
+             array('i', [2, 5, 6, 7, 8, 9]))
+        """
+        h2v = self.half_edge_to_vertex()
+        verts = self.vertices()
+        nv = max(h2v) + 1
+
+        h2f = self.half_edge_to_face()
+        faces = self.faces()
+        nf = max(h2f) + 1
+
+        forest = array('i', [-2] * nv)
+        for v in root_vertices:
+            forest[v] = -1
+        coforest = array('i', [-2] * nf)
+        for f in root_faces:
+            coforest[f] = -1
+        used = array('i', [0] * (len(self._vp) // 2))
+
+        # build the forest
+        todo = list(root_vertices)
+        while todo:
+            h = todo.pop()
+            for hh in verts[h]:
+                if used[hh // 2]:
+                    continue
+                hh = hh ^ 1
+                v = h2v[hh]
+                if forest[v] == -2:
+                    forest[v] = hh
+                    used[hh // 2] = 1
+                    todo.append(v)
+
+        # build the coforest
+        todo = list(root_faces)
+        while todo:
+            h = todo.pop()
+            for hh in faces[h]:
+                if used[hh // 2]:
+                    continue
+                hh = hh ^ 1
+                f = h2f[hh]
+                if coforest[f] == -2:
+                    coforest[f] = hh
+                    used[hh // 2] = 1
+                    todo.append(f)
+
+        return (forest, coforest, array('i', [e for e in self.edge_indices() if not used[e]]))
+
+    def tree_cotree_decomposition(self, root_vertex=0, root_face=0):
+        r"""
+        Return a tree cotree decomposition as a triple ``(tree, cotree, complementary_edges)``.
+
+        INPUT:
+
+        - ``root_vertex`` -- (default: ``0``) the vertex the tree is rooted at
+
+        - ``root_face`` -- (default: ``0``) the face the cotree is rooted at
+
+        OUTPUT: a triple ``(tree, cotree, complementary_edges)`` of arrays of
+        integers. The ``tree`` and ``cotree`` have length respectively the
+        number of vertices and the number of faces in the map. We describe
+        ``tree`` below and the ``cotree`` is similar.
+
+        - ``tree[root_vertex]`` is ``-1``
+        - for a non-root vertex ``v``, ``tree[v]`` is a half-edge adjacent to ``v`` and
+          going out from the root.
+
+        The last entry ``complementary_edges`` is the array of edge indices that
+        are neither part of the tree nor the cotree.
+
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+            sage: m = OrientedMap(vp="(2,3,1,5,6,~5)(~1,4,~2,~6)(~3,~4)")
+            sage: tree, cotree, comp_edges = m.tree_cotree_decomposition()
+            sage: tree
+            array('i', [-1, 3, 7])
+            sage: cotree
+            array('i', [-1, 9, 4])
+            sage: comp_edges
+            array('i', [5, 6])
+
+        To obtain the edges used in the tree and cotree respectively, one can
+        do it as follows (and check that we indeed obtain a partition of
+        edges)::
+
+            sage: tree_edges = [h // 2 for h in tree if h != -1]
+            sage: tree_edges
+            [1, 3]
+            sage: cotree_edges = [h // 2 for h in cotree if h != -1]
+            sage: cotree_edges
+            [4, 2]
+        """
+        return self.forest_coforest_decomposition((root_vertex,), (root_face,))
 
     #############
     # Mutations #
