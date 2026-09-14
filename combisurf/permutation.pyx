@@ -659,6 +659,21 @@ def perm_is_one(array.array p, int n=-1):
 
 def perm_dense_cycles(array.array p, int n=-1):
     r"""
+    Return an array labelling each point of ``p`` by the index of the cycle it
+    belongs to.
+
+    The cycles are numbered by consecutive integers starting from zero,
+    following the order in which they are met while scanning the points
+    ``0, 1, ..., n - 1``. Inactive points, encoded by ``-1`` in ``p``, get the
+    label ``-1``.
+
+    INPUT:
+
+    - ``p`` -- a permutation
+
+    - ``n`` -- (default: ``-1``) only use the first ``n`` points of ``p``; if
+      ``-1`` use them all
+
     EXAMPLES::
 
         sage: from array import array
@@ -672,13 +687,30 @@ def perm_dense_cycles(array.array p, int n=-1):
 
         sage: perm_dense_cycles(array('i', [2,1,0]))
         array('i', [0, 1, 0])
+
+    The labels are consecutive, whatever the position of the cycles::
+
+        sage: perm_dense_cycles(array('i', [1,0,3,2,5,4]))
+        array('i', [0, 0, 1, 1, 2, 2])
+
+    Inactive points, encoded by ``-1``, get the label ``-1`` and are not
+    counted::
+
+        sage: perm_dense_cycles(array('i', [1,0,-1,4,3]))
+        array('i', [0, 0, -1, 1, 1])
+        sage: perm_dense_cycles(array('i', [2,-1,0]))
+        array('i', [0, -1, 0])
+
+    .. SEEALSO::
+
+        :func:`perm_cycles`
     """
     if n == -1:
         n = len(p)
     cdef array.array res = array.array('i', [-1] * n)
     cdef int i, k = 0
     for i in range(n):
-        if p[i] == -1:
+        if p[i] == -1 or res[i] != -1:
             continue
         while res[i] == -1:
             res[i] = k
