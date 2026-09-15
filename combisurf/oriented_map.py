@@ -1838,39 +1838,50 @@ class OrientedMap:
 
             sage: from combisurf import OrientedMap
 
+        In each of the examples below, the edge ``2`` is attached to the map
+
             sage: vp = "(0,1,~0,~1)"
             sage: fp = "(0,1,~0,~1)"
             sage: m = OrientedMap(vp, fp)
+            sage: m
+            OrientedMap("(0,1,~0,~1)", "(0,1,~0,~1)")
+
+        in a different configuration, and deleting it gives that map back::
 
             sage: vp20 = "(0,~2,2,1,~0,~1)"
             sage: fp20 = "(0,1,~0,~1,2)(~2)"
             sage: m = OrientedMap(vp20, fp20, mutable=True)
             sage: m.delete_edge(2)
             sage: m
+            OrientedMap("(0,1,~0,~1)", "(0,1,~0,~1)")
 
             sage: vp10 = "(0,2,1,~2,~0,~1)"
             sage: fp10 = "(0,~2)(~0,~1,2,1)"
             sage: m = OrientedMap(vp10, fp10, mutable=True)
             sage: m.delete_edge(2)
             sage: m
+            OrientedMap("(0,1,~0,~1)", "(0,1,~0,~1)")
 
             sage: vp30 = "(0,2,1,~0,~2,~1)"
             sage: fp30 = "(0,1,~2)(~0,~1,2)"
             sage: m = OrientedMap(vp30, fp30, mutable=True)
             sage: m.delete_edge(2)
             sage: m
+            OrientedMap("(0,1,~0,~1)", "(0,1,~0,~1)")
 
             sage: vp00 = "(0,~2,2,1,~0,~1)"
             sage: fp00 = "(0,1,~0,~1,2)(~2)"
             sage: m = OrientedMap(vp00, fp00, mutable=True)
             sage: m.delete_edge(2)
             sage: m
+            OrientedMap("(0,1,~0,~1)", "(0,1,~0,~1)")
 
             sage: vp22 = "(0,1,~2,2,~0,~1)"
             sage: fp22 = "(0,2,1,~0,~1)(~2)"
-            sage: m = OrientedMap(vp00, fp00, mutable=True)
+            sage: m = OrientedMap(vp22, fp22, mutable=True)
             sage: m.delete_edge(2)
             sage: m
+            OrientedMap("(0,1,~0,~1)", "(0,1,~0,~1)")
         """
         if check >= 1:
             self._assert_mutable()
