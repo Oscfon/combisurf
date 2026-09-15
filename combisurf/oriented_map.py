@@ -390,7 +390,7 @@ class OrientedMap:
             sage: OrientedMap("(0,1,~1)")._check_half_edge(1)
             Traceback (most recent call last):
             ...
-            ValueError: invalid half-edge (=1); the underlying edge is folded
+            ValueError: inactive half-edge (=1)
         """
         if not isinstance(h, numbers.Integral):
             raise TypeError(f"invalid half-edge {h} of type {type(h).__name__}")
@@ -398,7 +398,7 @@ class OrientedMap:
         if h < 0 or h >= len(self._vp):
             raise ValueError(f"half-edge number out of range (={h})")
         if self._vp[h] == -1:
-            raise ValueError(f"invalid half-edge (={h}); the underlying edge is folded")
+            raise ValueError(f"inactive half-edge (={h})")
         return h
 
     def _check_half_edge_or_negative(self, h):
@@ -406,12 +406,11 @@ class OrientedMap:
             raise TypeError(f"invalid half-edge {h} of type {type(h).__name__}")
         h = int(h)
         if h >= 0:
-            if  h >= len(self._vp):
-                raise ValueError(f"half-edge number out of range (={h})")
-            if self._vp[h] == -1:
-                raise ValueError(f"invalid half-edge (={h}); the underlying edge is folded")
+            self._check_half_edge(h)
         return h
 
+    # TODO: this does not make any sense, self._ep(h) == 0 is not testing
+    # at all that the edge is folded
     def _check_half_edge_folded(self, h):
         if not isinstance(h, numbers.Integral):
             raise TypeError(f"invalid half-edge {h} of type {type(h).__name__}")
@@ -867,7 +866,7 @@ class OrientedMap:
             sage: m.next_in_face(1)
             Traceback (most recent call last):
             ...
-            ValueError: invalid half-edge (=1); the underlying edge is folded
+            ValueError: inactive half-edge (=1)
         """
         if check:
             h = self._check_half_edge(h)
