@@ -548,15 +548,23 @@ def word_reduce(array.array w):
     EXAMPLES::
 
         sage: from combisurf.word import word_init, word_reduce
+
+        sage: w = word_init([0, 2])
+        sage: word_reduce(w)
+        array('i', [0, 2])
+
         sage: w = word_init([0, 0, 2, 1, 1])
         sage: word_reduce(w)
         array('i', [0, 0, 2, 1, 1])
+
         sage: w = word_init([0, 0, 2, 3, 1, 1])
         sage: word_reduce(w)
         array('i')
+
         sage: w = word_init([0, 0, 1])
         sage: word_reduce(w)
         array('i', [0])
+
         sage: w = word_init([0, 2, 1, 0, 3, 1])
         sage: word_reduce(w)
         array('i')
@@ -566,7 +574,7 @@ def word_reduce(array.array w):
     cdef int i = 1
     ans = array.array('i', [w[0]])
     while i < len(w):
-        if ans and w[i] ^ 1 == ans[-1]:
+        if ans and w[i] ^ 1 == ans[len(ans) - 1]:
             ans.pop()
         else:
             ans.append(w[i])
