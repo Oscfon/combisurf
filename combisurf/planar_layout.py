@@ -188,7 +188,7 @@ class PlanarLayout:
         sage: pl = PlanarLayout(m)
         sage: pl.plot()    # default embedding from sage
         Graphics object consisting of ... graphics primitives
-        sage: pl.refine()  # perform some refinement steps
+        sage: pl.refine()  # not tested (perform some refinement steps)
         sage: pl.plot()    # nicer plot
         Graphics object consisting of ... graphics primitives
     """
