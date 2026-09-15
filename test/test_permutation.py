@@ -29,16 +29,23 @@ def test_order():
 
 
 def test_cycles():
-    from combisurf.permutation import perm_random, perm_cycles, perm_are_in_same_orbit
+    from combisurf.permutation import perm_random, perm_cycles, perm_are_in_same_orbit, perm_dense_cycles, perm_dense_cycle_positions
 
     for cycle_length in [1, 2, 3, 5, 10, 50]:
         p = perm_random(10)
         cycles = perm_cycles(p)
-        for ci in range(len(cycles)):
-            for cj in range(len(cycles)):
-                for i in cycles[ci]:
-                    for j in cycles[cj]:
-                        assert perm_are_in_same_orbit(p, i, j) == (ci == cj)
+        dense_cycles = perm_dense_cycles(p)
+        dense_positions = perm_dense_cycle_positions(p)
+        for i0, c0 in enumerate(cycles):
+
+            for pos0, j0 in enumerate(c0):
+                assert dense_positions[j0] == pos0
+                assert dense_cycles[j0] == i0
+
+            for i1, c1 in enumerate(cycles):
+                for j0 in c0:
+                    for j1 in c1:
+                        assert perm_are_in_same_orbit(p, j0, j1) == (i0 == i1)
 
 
 def test_perm_dense_cycles():

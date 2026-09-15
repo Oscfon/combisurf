@@ -679,14 +679,22 @@ def perm_dense_cycles(array.array p, int n=-1):
         sage: from array import array
         sage: from combisurf.permutation import perm_dense_cycles
 
-        sage: perm_dense_cycles(array('i', [1,2,0]))
-        array('i', [0, 0, 0])
+        sage: p = array('i', [1,3,4,0,5,7,6,2])
+        sage: perm_dense_cycles(p)
+        array('i', [0, 0, 1, 0, 1, 1, 2, 1])
 
-        sage: perm_dense_cycles(array('i', [0,2,1]))
-        array('i', [0, 1, 1])
+    The same array could also be constructed from :func:`perm_cycles` as
+    follows::
 
-        sage: perm_dense_cycles(array('i', [2,1,0]))
-        array('i', [0, 1, 0])
+        sage: from combisurf.permutation import perm_cycles
+        sage: perm_cycles(p)
+        [[0, 1, 3], [2, 4, 5, 7], [6]]
+        sage: ans = array('i', [-1] * 8)
+        sage: for i, c in enumerate(perm_cycles(p)):
+        ....:     for j in c:
+        ....:         ans[j] = i
+        sage: ans
+        array('i', [0, 0, 1, 0, 1, 1, 2, 1])
 
     The labels are consecutive, whatever the position of the cycles::
 
@@ -716,6 +724,65 @@ def perm_dense_cycles(array.array p, int n=-1):
             res[i] = k
             i = p.data.as_ints[i]
         k += 1
+    return res
+
+
+def perm_dense_cycle_positions(array.array p, int n=-1):
+    r"""
+    Return an integral array of the same length as the permutation ``p`` whose
+    element at index ``i`` is the position of ``i`` in its cycle.
+
+    INPUT:
+
+    - ``p`` -- a permutation
+
+    - ``n`` -- (default: ``-1``) only use the first ``n`` points of ``p``; if
+      ``-1`` use them all
+
+    EXAMPLES::
+
+        sage: from array import array
+        sage: from combisurf.permutation import perm_dense_cycle_positions
+
+        sage: p = array('i', [1,3,4,0,5,7,6,2])
+        sage: perm_dense_cycle_positions(p)
+        array('i', [0, 1, 0, 2, 1, 2, 0, 3])
+
+    The same array could also be constructed from :func:`perm_cycles` as
+    follows::
+
+        sage: from combisurf.permutation import perm_cycles
+        sage: ans = array('i', [-1] * 8)
+        sage: for c in perm_cycles(p):
+        ....:     for pos, j in enumerate(c):
+        ....:         ans[j] = pos
+        sage: ans
+        array('i', [0, 1, 0, 2, 1, 2, 0, 3])
+
+    Inactive points, encoded by ``-1``, gets value ``-1``::
+
+        sage: perm_dense_cycle_positions(array('i', [1,0,-1,4,3]))
+        array('i', [0, 1, -1, 0, 1])
+
+        sage: perm_dense_cycle_positions(array('i', [2,-1,0]))
+        array('i', [0, -1, 1])
+
+    .. SEEALSO::
+
+        :func:`perm_dense_cycles`
+    """
+    if n == -1:
+        n = len(p)
+    cdef array.array res = array.array('i', [-1] * n)
+    cdef int i, k = 0
+    for i in range(n):
+        if p[i] == -1 or res[i] != -1:
+            continue
+        k = 0
+        while res[i] == -1:
+            res[i] = k
+            i = p.data.as_ints[i]
+            k += 1
     return res
 
 
