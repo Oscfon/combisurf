@@ -1614,6 +1614,109 @@ class OrientedMap:
         """
         return self.forest_coforest_decomposition((root_vertex,), (root_face,))
 
+    def radial_map(self):
+        r"""
+        Return the radial map of this map.
+
+        The *radial map* of an oriented map is the bipartite quadrangulation
+        obtained by adding a vertex in the center of each face, joining this
+        added vertex to every corner in the face and removing the original
+        edges. The vertices of the radial map are in bijection with the union
+        of vertices and faces of the original map. It as as many quadrilateral
+        faces as edges in the original map.
+
+        The convention used for labelling is that the half-edge of the radial
+        map to the left of `h` in the original map is labelled `2h`. That way,
+        vertices of the radial map are either cycles of positively oriented
+        edges or cycles of negatively oriented edges. In particular, the
+        bipartition of vertices is visible on the labelling.
+
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+            sage: m = OrientedMap(vp="(0,1,~0,2)(~1,~2)")
+            sage: m.radial_map()
+            OrientedMap("(0,2,1,4)(~0,~2,~5,~1,~4,~3)(3,5)", "(0,~3,5,~2)(~0,4,~1,2)(1,~5,3,~4)")
+
+        An example with inactive half edges::
+
+            sage: m = OrientedMap(vp="(0,3,6,~3)(~0,1,~6,~1)")
+            sage: m.radial_map()
+            OrientedMap("(0,6,12,7)(~0,~3,~1,~7)(1,2,13,3)(~2,~13,~6,~12)", "(0,~7,12,~6)(~0,7,~1,3)(1,~3,13,~2)(2,~12,6,~13)")
+
+        Raises a ``NotImplementedError`` on maps with folded edge::
+
+            sage: OrientedMap("(0)").radial_morphism()
+            Traceback (most recent call last):
+            ...
+            NotImplementedError
+        """
+        if self.has_folded_edge():
+            raise NotImplementedError
+        n = len(self._vp)
+        rvp = array('i', [-1] * (2 * n))
+        rfp = array('i', [-1] * (2 * n))
+        for h in range(n):
+            if self._vp[h] == -1:
+                continue
+            rvp[2 * h] = 2 * self._vp[h]
+            rvp[2 * h + 1] = 2 * self._fp[h] + 1
+            rfp[2 * self._fp[h]] = 2 * h + 1
+            rfp[2 * (h ^ 1) + 1] = 2 * self._fp[h]
+        return OrientedMap(vp=rvp, fp=rfp)
+
+    def radial_morphism(self):
+        r"""
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+            sage: m = OrientedMap(vp="(0,1,~0,2)(~1,~2)")
+            sage: m.radial_morphism()
+            [array('i', [0, 5]),
+             array('i', [4, 1]),
+             array('i', [4, 11]),
+             array('i', [10, 5]),
+             array('i', [8, 7]),
+             array('i', [6, 9])]
+            sage: m = OrientedMap(vp="(0,3,6,~3)(~0,1,~6,~1)")
+            sage: m.radial_morphism()
+            [array('i', [0, 7]),
+             array('i', [6, 1]),
+             array('i', [4, 27]),
+             array('i', [26, 5]),
+             None,
+             None,
+             array('i', [12, 25]),
+             array('i', [24, 13]),
+             None,
+             None,
+             None,
+             None,
+             array('i', [24, 5]),
+             array('i', [4, 25])]
+
+        Raises a ``NotImplementedError`` on maps with folded edge::
+
+            sage: OrientedMap("(0)").radial_morphism()
+            Traceback (most recent call last):
+            ...
+            NotImplementedError
+        """
+        if self.has_folded_edge():
+            raise NotImplementedError
+        n = len(self._vp)
+        mor = [None] * n
+        for e in range(n // 2):
+            h = 2 * e
+            if self._vp[h] == -1:
+                continue
+            mor[h] = array('i', [2 * h, 2 * self._fp[h] + 1])
+            mor[h + 1] = array('i', [2 * self._fp[h], 2 * h + 1])
+        # TODO: actually return a morphism
+        # from .morphism import OrientedMorphism_list
+        # return OrientedMapMorphism_list(self, self.radial_map(), mor)
+        return mor
+
     #############
     # Mutations #
     #############
