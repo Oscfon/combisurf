@@ -2852,77 +2852,6 @@ class OrientedMap:
         if mapping:
             return r
 
-    def iso_sig(self):
-        r"""
-        Return a canonical signature.
-
-        EXAMPLES::
-
-            sage: from veerer import *
-            sage: T = Triangulation("(0,3,1)(~0,4,2)(~1,~2,~4)")
-            sage: T.iso_sig()
-            '5_1__1_2~46098537_0000000000'
-            sage: TT = Triangulation.from_string(T.iso_sig())
-            sage: TT
-            Triangulation("(0,1,2)(~1,3,4)(~2,~4,~3)")
-            sage: TT.iso_sig() == T.iso_sig()
-            True
-
-            sage: T = Triangulation("(0,10,~6)(1,12,~2)(2,14,~3)(3,16,~4)(4,~13,~5)(5,~1,~0)(6,~17,~7)(7,~14,~8)(8,13,~9)(9,~11,~10)(11,~15,~12)(15,17,~16)")
-            sage: T.iso_sig()
-            'i_1__1_264a0e8i1mcj3sgr5tkq7xov9dbupwfzhyln_000000000000000000000000000000000000'
-            sage: Triangulation.from_string(T.iso_sig())
-            Triangulation("(0,1,2)(~0,3,4)(~1,5,6)(~2,7,8)(~3,9,10)(~4,11,12)(~5,~9,13)(~6,14,~12)(~7,~13,15)(~8,~14,16)(~10,~16,17)(~11,~15,~17)")
-
-            sage: t = [(-12, 4, -4), (-11, -1, 11), (-10, 0, 10), (-9, 9, 1),
-            ....:      (-8, 8, -2), (-7, 7, 2), (-6, 6, -3), (-5, 5, 3)]
-            sage: cols = [RED, RED, RED, RED, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE]
-            sage: T = VeeringTriangulation(t, cols, mutable=True)
-            sage: T.iso_sig()
-            'c_1_1_1_2548061cag39ei7dbkfnmjhl_000000000000000000000000_122212122212'
-
-        If we relabel the triangulation, the isomorphic signature does not change::
-
-            sage: from veerer.permutation import perm_random_centralizer
-            sage: p = perm_random_centralizer(T.edge_permutation())
-            sage: T.relabel(p)
-            sage: T.iso_sig()
-            'c_1_1_1_2548061cag39ei7dbkfnmjhl_000000000000000000000000_122212122212'
-
-        An isomorphic triangulation can be reconstructed from the isomorphic
-        signature via::
-
-            sage: s = T.iso_sig()
-            sage: T2 = VeeringTriangulation.from_string(s)
-            sage: T == T2
-            False
-            sage: T.is_isomorphic(T2)
-            True
-
-        TESTS::
-
-            sage: from veerer.veering_triangulation import VeeringTriangulation
-            sage: from veerer.permutation import perm_random
-
-            sage: t = [(-12, 4, -4), (-11, -1, 11), (-10, 0, 10), (-9, 9, 1),
-            ....:      (-8, 8, -2), (-7, 7, 2), (-6, 6, -3), (-5, 5, 3)]
-            sage: cols = [RED, RED, RED, RED, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE]
-            sage: T = VeeringTriangulation(t, cols, mutable=True)
-            sage: iso_sig = T.iso_sig()
-            sage: for _ in range(10):
-            ....:     p = perm_random_centralizer(T.edge_permutation())
-            ....:     T.relabel(p)
-            ....:     assert T.iso_sig() == iso_sig
-
-            sage: VeeringTriangulation("(0,1,2)(3,4,~1)(5,6,~4)", "RBGGRBG").iso_sig()
-            '7_1_1_1_2~4~068~5ac~9~_00000000000000_8128128'
-            sage: VeeringTriangulation.from_string('7_1_1_1_2~4~068~5ac~9~_00000000000000_8128128')
-            VeeringTriangulation("(0,1,2)(~2,3,4)(~4,5,6)", "GRBGRBG")
-        """
-        T = self.copy(mutable=True)
-        T.set_canonical_labels()
-        return T.to_string()
-
     def _non_isom_easy(self, other):
         r"""
         A quick certificate of non-isomorphism that does not require relabellings.
@@ -2940,61 +2869,31 @@ class OrientedMap:
 
         INPUT:
 
-        - ``other`` - a constellation
+        - ``other`` -- an :class:`OrientedMap`
 
         - ``certificate`` -- optional boolean (default ``False``), whether to
-           additionally return the relabelling when ``self`` and ``other`` are
-           isomorphic
+          additionally return the relabelling when ``self`` and ``other`` are
+          isomorphic
 
         EXAMPLES::
 
-            sage: from veerer import Triangulation
-            sage: sphere = Triangulation("(0,1,2)(~0,~2,~1)")
-            sage: sphere2 = Triangulation("(0,2,1)(~0,~1,~2)")
-            sage: torus = Triangulation("(0,1,2)(~0,~1,~2)")
-            sage: sphere.is_isomorphic(sphere2)
-            True
-            sage: sphere.is_isomorphic(torus)
-            False
+            sage: from combisurf import OrientedMap
+            sage: m = OrientedMap(vp="(0,1,2)(~0,~1,~2)")
+            sage: m.is_isomorphic(m)
+            Traceback (most recent call last):
+            ...
+            NotImplementedError
 
-        TESTS::
+        .. TODO::
 
-            sage: from veerer import Triangulation, VeeringTriangulation
-            sage: from veerer.permutation import perm_random_centralizer
-
-            sage: T = Triangulation("(0,5,1)(~0,4,2)(~1,~2,~4)(3,6,~5)", mutable=True)
-            sage: TT = T.copy()
-            sage: for _ in range(10):
-            ....:     rel = perm_random_centralizer(TT.edge_permutation())
-            ....:     TT.relabel(rel)
-            ....:     assert T.is_isomorphic(TT)
-
-            sage: fp = "(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"
-            sage: cols = "BRBBBRRBBBBR"
-            sage: V = VeeringTriangulation(fp, cols, mutable=True)
-            sage: W = V.copy()
-            sage: p = perm_random_centralizer(V.edge_permutation())
-            sage: W.relabel(p)
-            sage: assert V.is_isomorphic(W) is True
-            sage: ans, cert = V.is_isomorphic(W, True)
-            sage: V.relabel(cert)
-            sage: assert V == W
+            The implementation relied on :meth:`best_relabelling` which reads
+            the attribute ``_half_edges_data``. That attribute is never
+            assigned on an :class:`OrientedMap`, so the whole canonical
+            labelling machinery raises ``AttributeError``. Rewrite it, or drop
+            the ``_half_edges_data`` / ``_edges_data`` indirection that was
+            inherited from veerer.
         """
-        if type(self) is not type(other):
-            raise TypeError("can only check isomorphisms between identical types")
-
-        if self._non_isom_easy(other):
-            return (False, None) if certificate else False
-
-        r1, fp1, half_edges_data1, edges_data1 = self.best_relabelling()
-        r2, fp2, half_edges_data2, edges_data2 = other.best_relabelling()
-
-        if fp1 != fp2 or half_edges_data1 != half_edges_data2 or edges_data1 != edges_data2:
-            return (False, None) if certificate else False
-        elif certificate:
-            return (True, perm_compose(r1, perm_invert(r2)))
-        else:
-            return True
+        raise NotImplementedError
 
     def dual(self, mutable=None, check=True):
         r"""
