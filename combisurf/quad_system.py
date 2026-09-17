@@ -1159,7 +1159,7 @@ class LazyGeodesic:
             if check:
                 raise NotImplementedError
             self._first = geo[0]
-            self._first = geo[-1]
+            self._last = geo[-1]
             self._turn_sequence = deque(turn)
                 
 
