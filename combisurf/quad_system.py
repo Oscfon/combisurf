@@ -108,25 +108,33 @@ def tree_co_tree(m):
 
 def tree_contraction(m, treecotree):
     r"""
-    Compute the OrientedMap F obtained from m by:
-        - contracting all the edges in the tree of treecotree
-        - removing all the edges in the co-tree of treecotree
-    Compute a list correspondence of length the number of half-edges of m such that correspondence[e] is:
-        - None if e is an edge of the tree of treecotree
-        - d such that fp[d]=e in m after contracting the edge of the tree if e is an edge of the cotree
-        - the corresponding edge of F otherwise
-    Compute a list recor such that recor[f] for f an half-edge in F is the corresponding half_edge in m
-    Compute a list rank such that rank[e] is:
-        - None if e is an edge of the tree of treecotree
-        - the index of e around the vertex if e is an edge of the cotree
-        - the total number of edge of the cotree between e and the next edge in F
+    Compute the ``OrientedMap`` ``F`` obtained from ``G`` by:
+
+    - contracting all the edges in the tree of ``treecotree``
+    - removing all the edges in the co-tree of ``treecotree``
+
+    Also compute:
+
+    - a list ``correspondence`` of length the number of half-edges of ``G`` such that ``correspondence[e]`` is:
+
+      - ``None`` if ``e`` is an edge of the tree of ``treecotree``
+      - ``d`` such that ``fp[d] == e`` in ``G`` after contracting the edges of the tree, if ``e`` is an edge of the cotree
+      - the corresponding edge of ``F`` otherwise
+
+    - a list ``recor`` such that ``recor[f]``, for ``f`` a half-edge in ``F``, is the corresponding half-edge in ``G``
+    - a list ``rank`` such that ``rank[e]`` is:
+
+      - ``None`` if ``e`` is an edge of the tree of ``treecotree``
+      - the index of ``e`` around the vertex if ``e`` is an edge of the cotree
+      - the total number of edges of the cotree between ``e`` and the next edge in ``F``
 
     INPUT:
 
-    treecotree should be a list of length the number of edges in m where treecotree[e] is:
-        - 0 if e is in the tree
-        - 1 if e is in the co-tree
-        - 2 otherwise
+    - ``treecotree`` -- a list of length the number of edges in ``G`` where ``treecotree[e]`` is:
+
+      - ``0`` if ``e`` is in the tree
+      - ``1`` if ``e`` is in the co-tree
+      - ``2`` otherwise
     """
     fp = m.face_permutation(copy=False)
     correspondence = [None for _ in m.half_edges()]
@@ -320,6 +328,45 @@ def bracket_removal_left(Q, geo, s, positive, length, d):
             s.popleft()
         turn_modif_left(s, 1, d)
         turn_add_left(s, 2, length)
+
+
+
+def test_KMP(u, v):
+    r"""
+    Test if ``u`` is a subword of ``v`` in ``O(|u|+|v|)``.
+    """
+    if len(u) == 0:
+        return True
+    elif len(v) == 0:
+        return False
+    cnd = 0
+    T = [-1]
+    for i in range(1, len(u)):
+        if u[i] == u[cnd]:
+            T.append(u[cnd])
+        else:
+            T.append(cnd)
+            while cnd>=0 and u[i] == u[cnd]:
+                cnd = T[cnd]
+            cnd += 1
+    j = 0
+    k = 0
+    res = False
+    while j < len(v) and not res:
+        if u[k] == v[j]:
+            j += 1
+            k += 1
+            if k == len(u):
+                res = True
+        else:
+            k = T[k]
+            if k == -1:
+                k += 1
+                j += 1
+    return res
+
+
+
 
 
 class QuadSystem:

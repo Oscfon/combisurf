@@ -453,9 +453,15 @@ class OrientedMap:
         - ``directed`` (boolean, default ``False``) -- whether to return a SageMath
           ``Graph`` or ``DiGraph``
 
-        - ``subdivide`` (boolean, default ``False``) -- if ``True`` then insert
-          one vertex on each edge and two vertices on each loop so that the
-          resulting graph is simple.
+        - ``subdivide`` -- boolean, non-negative integer, or callable
+          ``(u, v, half_edge_list, h) -> k`` (default ``True``) -- if
+          ``True`` then insert one vertex on each edge and two vertices on
+          each loop so that the resulting graph is simple; if ``False`` (or
+          the integer ``0``) then never subdivide, so ``G`` is returned as a
+          multigraph with loops, exactly mirroring this map's own
+          combinatorics; a positive integer ``k`` inserts exactly ``k``
+          vertices on every edge (always simple, like ``True``); a callable
+          chooses the subdivision count per edge.
 
         - ``root`` (``None`` or a valid half-edge) -- if specified, it should be
           a half-edge that is used to identify the external face in planar drawings
@@ -480,6 +486,17 @@ class OrientedMap:
             sage: pos = G.layout_planar(on_embedding=em, external_face=root)
             sage: G.plot(pos=pos, vertex_labels=False, edge_labels=True)
             Graphics object consisting of ... graphics primitives
+
+        With ``subdivide=False``, ``G`` mirrors the map's own combinatorics
+        exactly, including a genuine loop (both half-edges of an edge at the
+        same vertex, as opposed to a folded edge where only one is active)::
+
+            sage: m = OrientedMap(vp="(0,~0)")
+            sage: G, em, root, edge_list = m.graph(subdivide=False)
+            sage: G
+            Looped multi-graph on 1 vertex
+            sage: list(G.edges(labels=False))
+            [(0, 0)]
         """
         # NOTE: sage graphs use *clockwise* order for the neighbors
         if self.has_folded_edge():
@@ -489,15 +506,28 @@ class OrientedMap:
             root = len(self._vp) - 2
 
         if subdivide is True:
+            # every loop/multi-edge always gets subdivided away, so G is
+            # always simple regardless of the map's own combinatorics
+            allow_loops = allow_multiedges = False
             subdivide = self._subdivide_true
         elif subdivide is False:
+            # never subdivided, so G must keep any loop/multi-edge as-is
+            allow_loops = allow_multiedges = True
             subdivide = self._subdivide_false
         elif isinstance(subdivide, numbers.Integral):
             k = int(subdivide)
             if k < 0:
                 raise ValueError("subdivide can not be a negative integer")
+            # a constant k>=1 subdivides every edge into a simple path;
+            # k=0 never subdivides, same as subdivide=False above
+            allow_loops = allow_multiedges = (k == 0)
             subdivide = lambda u, v, half_edge_list, h: k
-        elif not callable(subdivide):
+        elif callable(subdivide):
+            # a custom callable's per-edge behavior isn't known statically
+            # (it might leave some loop/multi-edge unsubdivided), so allow
+            # both rather than risk G.add_edge raising below
+            allow_loops = allow_multiedges = True
+        else:
             raise TypeError("subdivide must be a boolean or a callable")
 
         vertices = self.vertices()
@@ -511,10 +541,10 @@ class OrientedMap:
 
         if directed:
             from sage.graphs.digraph import DiGraph
-            G = DiGraph(len(vertices), multiedges=not subdivide, loops=not subdivide)
+            G = DiGraph(len(vertices), multiedges=allow_multiedges, loops=allow_loops)
         else:
             from sage.graphs.graph import Graph
-            G = Graph(len(vertices), multiedges=not subdivide, loops=not subdivide)
+            G = Graph(len(vertices), multiedges=allow_multiedges, loops=allow_loops)
 
         # group half edges depending on their endpoints
         half_edges = collections.defaultdict(list)
