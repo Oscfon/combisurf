@@ -78,7 +78,7 @@ class Walk:
         self._walk = walk
 
         if check:
-            self._check
+            self._check()
             
 
     def _check(self):

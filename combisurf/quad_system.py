@@ -343,10 +343,10 @@ def test_KMP(u, v):
     T = [-1]
     for i in range(1, len(u)):
         if u[i] == u[cnd]:
-            T.append(u[cnd])
+            T.append(T[cnd])
         else:
             T.append(cnd)
-            while cnd>=0 and u[i] == u[cnd]:
+            while cnd>=0 and u[i] != u[cnd]:
                 cnd = T[cnd]
             cnd += 1
     j = 0
@@ -863,7 +863,7 @@ class Geodesic:
                     turn_remove(s)
                     turn_remove_left(s)
 
-        if first_turn == 1 and len(s) >= 1 and s[0][0] == 1: # bracket starting at the origin
+        elif first_turn == 1 and len(s) >= 1 and s[0][0] == 1: # bracket starting at the origin
             geo.pop()
             turn_remove(s)
             bracket_removal_left(Q, geo, s, True, 0, d)
@@ -900,6 +900,7 @@ class Geodesic:
                     turn_remove_left(s)
                     
         elif first_turn == d - 1 and len(s) >= 2 and s[0][0] == d - 2 and s[1][0] == d - 1: # bracket starting at the origin
+            print("No")
             geo.pop()
             turn_remove(s)
             bracket_removal_left(Q, geo, s, False, s[0][1], d)
@@ -911,7 +912,7 @@ class Geodesic:
                     turn_remove(s)
                     turn_remove_left(s)
 
-        if first_turn == 2 and len(s) >= 3: # bracket containing the origin
+        elif first_turn == 2 and (len(s) >= 2 or (len(s) == 1 and s[0][0] != 2)): # bracket containing the origin
             while first_turn == 2:
                 geo.append(geo.popleft())
                 (t, n) = s.popleft()
@@ -924,28 +925,24 @@ class Geodesic:
                     s.append((t2, n2))
                     s.append((2, 1))
                 first_turn = t
-            if first_turn == 1 and s[-2][0] == 1:
-                bracket_removal(Q, geo, s, True, s[-1][1], d)
-                geo.popleft()
-                turn_remove_left(s)
+            if first_turn == 1:
+                self.origin_simplification() # the bracket now starts at the origin so we can recursively call origin_simplification
 
-        elif first_turn == d - 2 and len(s) >= 3: # bracket containing the origin
+        elif first_turn == d - 2 and (len(s) >= 2 or (len(s) == 1 and s[0][0] != d - 2)): # bracket containing the origin
             while first_turn == d - 2:
                 geo.append(geo.popleft())
                 (t, n) = s.popleft()
                 if n != 1:
                     s.appendleft((t, n - 1))
                 (t2, n2) = s.pop()
-                if t2==2:
-                    s.append((2, n2 + 1))
+                if t2==d-2:
+                    s.append((d-2, n2+1))
                 else:
                     s.append((t2, n2))
-                    s.append((2, 1))
+                    s.append((d-2, 1))
                 first_turn = t
-            if first_turn == d - 1 and s[-2][0] == d - 1:
-                bracket_removal(Q, geo, s, False, s[-1][1], d)
-                geo.popleft()
-                turn_remove_left(s)
+            if first_turn == d - 1:
+                self.origin_simplification() # the bracket now starts at the origin so we can recursively call origin_simplification
 
     def canonical(self):
         r"""
@@ -1037,6 +1034,7 @@ class Geodesic:
                             turn_add(s, d - 2, n1)
                             l = deque([])
                             e = geo[0]
+                            e1 = Q._ep(e)
                             for j in range(n2):
                                 e = geo[1 + j]
                                 e1 = Q._ep(e)
