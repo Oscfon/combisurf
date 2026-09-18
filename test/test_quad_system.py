@@ -137,6 +137,36 @@ def test_quad_system_matches_QuadSystem():
     assert tested
 
 
+def test_quad_system_genus_zero():
+    # in genus zero the forest and the coforest are spanning, since Euler
+    # gives ne = (nv - 1) + (nf - 1) and leaves no complementary edge, so
+    # everything collapses: the quad system is the empty map and every
+    # half-edge projects to the empty walk
+    from combisurf import OrientedMap
+
+    maps = [m for m in quad_system_maps() if m.is_connected() and m.genus() == 0]
+    maps += [OrientedMap(vp="(0,~0)"),
+             OrientedMap(vp="(0,1,~1,~0)"),
+             OrientedMap(vp="(0,1,2)(~0)(~1)(~2)")]
+    assert maps
+    for m in maps:
+        forest, coforest, comp = m.forest_coforest_decomposition()
+        assert not list(comp), m
+        q, proj = m.quad_system(forest, coforest, mapping=True)
+        assert q == OrientedMap("", ""), m
+        assert q.num_edges() == 0, m
+        assert all(p is None or len(p) == 0 for p in proj), m
+
+    # fed a coforest that is not spanning, the same map gives a genuine
+    # quadrangulation instead
+    m = OrientedMap(vp="(0,~0)")
+    forest, coforest, _ = m.forest_coforest_decomposition()
+    q = m.quad_system(forest, [])
+    assert q == m.radial_map(), m
+    assert set(q.face_profile()) == {4}, m
+    assert q.genus() == 0, m
+
+
 def test_quad_system_arguments():
     from combisurf import OrientedMap
 

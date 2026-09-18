@@ -1921,6 +1921,13 @@ class OrientedMap:
                 for a in (a0, a1):
                     b = qfp[a]
                     quad.fold_corner(a, check=1)
+                    if b == a ^ 1:
+                        # the edge of a bounded its face on both sides and got
+                        # pruned, so nothing survives it and there is nothing
+                        # to link. This ends the last quadrilateral of a map of
+                        # genus zero.
+                        owner[a] = owner[a ^ 1] = -1
+                        continue
                     # b takes over the position of a ^ 1, hence lies on the
                     # same face
                     f = owner[a ^ 1]
@@ -2051,6 +2058,11 @@ class OrientedMap:
         the face of ``h`` loses two from its degree, and the head of
         ``next_in_face(h)`` is merged with the tail of ``h``.
 
+        When ``next_in_face(h)`` is ``ep(h)`` the corner is bounded by the edge
+        of ``h`` on both sides. The fev relation then forces the head of ``h``
+        to be a vertex of degree one, so that the edge is pruned and the merge
+        of the two ends is a no-op; see :meth:`delete_edge`.
+
         This is the elementary move out of which the collapse of a face is
         built: gluing the sides of a face in non-crossing pairs is a sequence
         of such folds.
@@ -2086,9 +2098,24 @@ class OrientedMap:
             sage: mc.radial_map().face_profile() == r.face_profile()
             True
 
+        The corner at the head of a leaf half-edge is bounded by the edge of
+        that half-edge on both sides, and folding it prunes the edge::
+
+            sage: r = OrientedMap(fp="(0,~0,1,~1)", mutable=True)
+            sage: r.fold_corner(0)
+            sage: r
+            OrientedMap("(1)(~1)", "(1,~1)")
+
+        Doing it once more empties the map::
+
+            sage: r.fold_corner(3)
+            sage: r
+            OrientedMap("", "")
+
         .. SEEALSO::
 
-            :meth:`fold_edge`, :meth:`radial_map`, :meth:`contract_edge`
+            :meth:`fold_edge`, :meth:`radial_map`, :meth:`contract_edge`,
+            :meth:`delete_edge`
         """
         if check >= 1:
             self._assert_mutable()
@@ -2106,7 +2133,11 @@ class OrientedMap:
         if b == a:
             raise ValueError(f"the face of the half-edge {h} has degree one")
         if b == a1:
-            raise ValueError(f"the half-edge {h} is followed by its opposite half-edge in its face")
+            # a is a leaf half-edge: its head is a vertex of degree one and the
+            # corner is bounded by the edge of a on both sides. Folding it
+            # prunes that edge, which still takes two from the face of a.
+            self.delete_edge(a // 2, check=0)
+            return
 
         # a and b leave the boundary of their face; a is identified with b1 and
         # a1 with b, so that the edge of a disappears. Everything is read

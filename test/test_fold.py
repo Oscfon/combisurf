@@ -150,19 +150,41 @@ def test_fold_edge_effect():
                 assert dv in (0, 1), (m, h)
 
 
-def test_fold_corner_errors():
+def test_fold_corner_prunes_a_leaf():
     from combisurf import OrientedMap
 
-    # the opposite half-edge follows h in its face: there is no corner to fold
-    m = OrientedMap(vp="(0,~0,1,~1)")
-    R = m.radial_map()
-    rfp = R.face_permutation(copy=False)
-    folded_onto_itself = [h for h in R.half_edges() if rfp[h] == h ^ 1]
-    assert folded_onto_itself
-    for h in folded_onto_itself:
-        r = R.copy(mutable=True)
-        with pytest.raises(ValueError, match="followed by its opposite half-edge"):
+    # the opposite half-edge follows h in its face: the corner is bounded by
+    # the edge of h on both sides and folding prunes it
+    for m in sample_maps():
+        R = m.radial_map()
+        rvp = R.vertex_permutation(copy=False)
+        rfp = R.face_permutation(copy=False)
+        leaves = [h for h in R.half_edges() if rfp[h] == h ^ 1]
+        for h in leaves:
+            # the fev relation makes the head of h a vertex of degree one
+            assert rvp[h ^ 1] == h ^ 1, (m, h)
+            r = R.copy(mutable=True)
             r.fold_corner(h)
+            r._check()
+            # the same effect as any other fold: one edge less, the face of h
+            # two shorter, and the two ends of the edge merged
+            assert r.num_edges() == R.num_edges() - 1, (m, h)
+            assert r.num_vertices() == R.num_vertices() - 1, (m, h)
+            assert r.num_faces() == R.num_faces(), (m, h)
+            assert r.euler_characteristic() == R.euler_characteristic(), (m, h)
+            assert not r.has_folded_edge(), (m, h)
+
+    # folding the two corners of the single quadrilateral of a one edge map
+    # empties it
+    r = OrientedMap(fp="(0,~0,1,~1)", mutable=True)
+    r.fold_corner(1)
+    r.fold_corner(3)
+    r._check()
+    assert r == OrientedMap("", "")
+
+
+def test_fold_corner_errors():
+    from combisurf import OrientedMap
 
     # folded edges are not supported by fold_corner
     f = OrientedMap("(0,2,~2)", mutable=True)
