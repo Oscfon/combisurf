@@ -203,8 +203,6 @@ def perm_trim(array.array p):
         sage: p
         array('i', [3, 1, 0, 2])
     """
-    if not p:
-        return
     cdef int n = len(p) - 1
     while n >= 0 and p.data.as_ints[n] == -1:
         n -= 1
@@ -731,20 +729,46 @@ def perm_dense_cycles(array.array p, int n=-1):
         sage: perm_dense_cycles(array('i', [2,-1,0]))
         array('i', [0, -1, 0])
 
+    TESTS:
+
+    With ``n`` only the first ``n`` points are scanned, and they must be
+    stable under ``p``::
+
+        sage: perm_dense_cycles(array('i', [1,0,3,2]), 2)
+        array('i', [0, 0])
+        sage: perm_dense_cycles(array('i', [1,0,3,2]), 0)
+        array('i')
+        sage: perm_dense_cycles(array('i', [3,1,2,0]), 2)
+        Traceback (most recent call last):
+        ...
+        ValueError: p does not map [0, 2) to itself
+        sage: perm_dense_cycles(array('i', [1,0,3,2]), 9)
+        Traceback (most recent call last):
+        ...
+        ValueError: n (=9) must be between 0 and len(p) (=4)
+
     .. SEEALSO::
 
         :func:`perm_cycles`
     """
     if n == -1:
         n = len(p)
+    elif n < 0 or n > len(p):
+        raise ValueError(f"n (={n}) must be between 0 and len(p) (={len(p)})")
+
     cdef array.array res = array.array('i', [-1] * n)
-    cdef int i, k = 0
+    cdef int * pp = p.data.as_ints
+    cdef int * rr = res.data.as_ints
+    cdef int i, j, k = 0
     for i in range(n):
-        if p[i] == -1 or res[i] != -1:
+        if pp[i] == -1 or rr[i] != -1:
             continue
-        while res[i] == -1:
-            res[i] = k
-            i = p.data.as_ints[i]
+        j = i
+        while rr[j] == -1:
+            rr[j] = k
+            j = pp[j]
+            if j < 0 or j >= n:
+                raise ValueError(f"p does not map [0, {n}) to itself")
         k += 1
     return res
 
@@ -789,21 +813,47 @@ def perm_dense_cycle_positions(array.array p, int n=-1):
         sage: perm_dense_cycle_positions(array('i', [2,-1,0]))
         array('i', [0, -1, 1])
 
+    TESTS:
+
+    With ``n`` only the first ``n`` points are scanned, and they must be
+    stable under ``p``::
+
+        sage: perm_dense_cycle_positions(array('i', [1,0,3,2]), 2)
+        array('i', [0, 1])
+        sage: perm_dense_cycle_positions(array('i', [1,0,3,2]), 0)
+        array('i')
+        sage: perm_dense_cycle_positions(array('i', [3,1,2,0]), 2)
+        Traceback (most recent call last):
+        ...
+        ValueError: p does not map [0, 2) to itself
+        sage: perm_dense_cycle_positions(array('i', [1,0,3,2]), 9)
+        Traceback (most recent call last):
+        ...
+        ValueError: n (=9) must be between 0 and len(p) (=4)
+
     .. SEEALSO::
 
         :func:`perm_dense_cycles`
     """
     if n == -1:
         n = len(p)
+    elif n < 0 or n > len(p):
+        raise ValueError(f"n (={n}) must be between 0 and len(p) (={len(p)})")
+
     cdef array.array res = array.array('i', [-1] * n)
-    cdef int i, k = 0
+    cdef int * pp = p.data.as_ints
+    cdef int * rr = res.data.as_ints
+    cdef int i, j, k
     for i in range(n):
-        if p[i] == -1 or res[i] != -1:
+        if pp[i] == -1 or rr[i] != -1:
             continue
+        j = i
         k = 0
-        while res[i] == -1:
-            res[i] = k
-            i = p.data.as_ints[i]
+        while rr[j] == -1:
+            rr[j] = k
+            j = pp[j]
+            if j < 0 or j >= n:
+                raise ValueError(f"p does not map [0, {n}) to itself")
             k += 1
     return res
 
