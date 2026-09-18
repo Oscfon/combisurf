@@ -1495,7 +1495,7 @@ class OrientedMap:
             # TODO: implement something less costly
             return [cc.genus() for cc in self.connected_components_submaps(relabel=True)]
 
-    def _spanning_forest(self, cycles, h2c, nc, roots, used):
+    def _spanning_forest(self, cycles, h2c, roots, used):
         r"""
         Return a spanning forest of the cells ``cycles``, rooted at ``roots``.
 
@@ -1512,8 +1512,6 @@ class OrientedMap:
           cell, that is the output of :meth:`half_edge_to_vertex` or
           :meth:`half_edge_to_face`
 
-        - ``nc`` -- the number of cells
-
         - ``roots`` -- ``None`` or the cells the trees are rooted at. A tree
           never leaves its connected component. When ``None`` the cells that no
           tree has reached start a new one, which gives exactly one tree per
@@ -1522,13 +1520,14 @@ class OrientedMap:
         - ``used`` -- an array of flags indexed by the edges, read to skip the
           edges already taken and written for the ones this call takes
 
-        OUTPUT: an array of length ``nc`` whose entry is ``-1`` at a root, the
-        half-edge joining a cell to its parent at a cell some tree reached, and
-        ``-2`` at a cell no tree reached
+        OUTPUT: an array of the length of ``cycles`` whose entry is ``-1`` at a
+        root, the half-edge joining a cell to its parent at a cell some tree
+        reached, and ``-2`` at a cell no tree reached
 
         This is exercised through :meth:`forest_coforest_decomposition`.
         """
         vp = self._vp
+        nc = len(cycles)
         forest = array('i', [-2] * nc)
 
         if roots is None:
@@ -1645,9 +1644,9 @@ class OrientedMap:
         # faces of the dual. The two share ``used``, so that the coforest only
         # gets to pick among the edges the forest left.
         forest = self._spanning_forest(self.vertices(), self.half_edge_to_vertex(),
-                                       self.num_vertices(), root_vertices, used)
+                                       root_vertices, used)
         coforest = self._spanning_forest(self.faces(), self.half_edge_to_face(),
-                                         self.num_faces(), root_faces, used)
+                                         root_faces, used)
 
         # a vertex left at -2 was reached by no tree, that is its component
         # holds no root vertex; likewise for the faces
