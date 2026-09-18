@@ -3,6 +3,10 @@ import pytest
 def test_constructor():
     from combisurf import OrientedMap
 
+    OrientedMap(None, None)
+    OrientedMap([], None)
+    OrientedMap(None, [])
+
     OrientedMap([2, 1, 3, 0], None)
     OrientedMap(None, [2, 1, 3, 0])
     OrientedMap([0, -1, 3, 4, 5, 2])
@@ -14,11 +18,31 @@ def test_constructor():
     OrientedMap("(0,1,2)(~0,~1,~2)", None)
     OrientedMap(None, "(0,1,2)(~0,~1,~2)")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="vp is not a permutation"):
         OrientedMap([0, 0], None)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="fp is not a permutation"):
         OrientedMap(None, [0, 0])
+
+    with pytest.raises(ValueError, match="different lengths"):
+        OrientedMap([1, 0], [1, 0, 3, 2])
+    with pytest.raises(ValueError, match="different lengths"):
+        OrientedMap([1, 0, 3, 2], [1, 0])
+
+    with pytest.raises(ValueError, match="different domains"):
+        OrientedMap([1, 0, 3, 2, 5, 4], [1, 0, -1, -1, 5, 4])
+
+    OrientedMap([0, -1], [0, -1])
+    with pytest.raises(ValueError, match="is active but its twin"):
+        OrientedMap([-1, 1], [-1, 1])
+    with pytest.raises(ValueError, match="is active but its twin"):
+        OrientedMap([-1,1,2,-1],[-1,1,2,-1])
+
+    with pytest.raises(ValueError, match="trailing inactive edges"):
+        OrientedMap([0, -1, -1, -1], [0, -1, -1, -1])
+
+    with pytest.raises(ValueError, match="fev relation not satisfied"):
+        OrientedMap([0, 1], [0, 1])
 
 
 def test_check_half_edge():

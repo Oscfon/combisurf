@@ -240,9 +240,6 @@ class OrientedMap:
                 if ii != -1:
                     fp[ii] = i
 
-        if len(vp) != len(fp):
-            raise ValueError(f"inconsistent input: vp has length {len(vp)} while fp has length {len(fp)}")
-
         self._vp = vp
         self._fp = fp
         self._mutable = mutable
@@ -283,21 +280,31 @@ class OrientedMap:
             return h ^ 1
 
     def _check(self, error=RuntimeError):
-        ne = len(self._vp) // 2
-
         if not (hasattr(self, '_vp') and hasattr(self, '_fp')):
             raise error("missing attributes: these must be _vp, _ep, _fp, _data")
-        if not perm_check(self._vp, 2 * ne):
+        if not perm_check(self._vp):
             raise error(f"vp is not a permutation: {self._vp}")
-        if not perm_check(self._fp, 2 * ne):
+        if not perm_check(self._fp):
             raise error(f"fp is not a permutation: {self._fp}")
+        if len(self._vp) != len(self._fp):
+            raise error("vp and fp have different lengths")
+        if len(self._vp) % 2:
+            raise error("vp and fp must have even lengths")
 
-        if self._vp and (self._vp[-2] == -1 or self._fp[-2] == -1):
-            raise error("trailing -1 in vertex or face permutation")
+        ne = len(self._vp) // 2
+        if ne == 0:
+            return
 
         for h in range(2 * ne):
             if (self._vp[h] == -1) != (self._fp[h] == -1):
-                raise ValueError(f"vp (={self._vp}) and fp (={self._fp}) with different domains")
+                raise error(f"vp (={self._vp}) and fp (={self._fp}) with different domains")
+
+        for e in range(ne):
+            if self._vp[2 * e] == -1 and self._vp[2 * e + 1] != -1:
+                raise error(f"half-edge {2 * e + 1} is active but its twin {2 * e} is not")
+
+        if self._vp[-2] == -1 or self._fp[-2] == -1:
+            raise error("trailing inactive edges")
 
         for h in range(2 * ne):
             if self._vp[h] != -1 and self._fp[self._ep(self._vp[h])] != h:
@@ -1286,9 +1293,9 @@ class OrientedMap:
             True
             sage: OrientedMap(fp="(0,1,2)(3,4,5)").is_connected()
             False
-            sage: OrientedMap(fp="(2,~3)(~2,4)").is_connected()
+            sage: OrientedMap(fp="(2,3)(~2,4)").is_connected()
             True
-            sage: OrientedMap(fp="(2,~3)(4,~4)").is_connected()
+            sage: OrientedMap(fp="(2,3)(4,~4)").is_connected()
             False
         """
         return perms_are_transitive((self._vp, self._fp))
