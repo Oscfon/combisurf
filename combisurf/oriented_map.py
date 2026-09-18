@@ -1766,6 +1766,191 @@ class OrientedMap:
         vp[h0], vp[h1] = vp[h1], vp[h0]
         fp[fp0_pre], fp[fp1_pre] = fp[fp1_pre], fp[fp0_pre]"""
 
+    def fold_corner(self, h, check=2):
+        r"""
+        Fold the edge of ``h`` onto the next edge in its face.
+
+        The two edges bounding the corner of the face of ``h`` at the head of
+        ``h`` get identified: ``ep(h)`` with ``next_in_face(h)``, and ``h``
+        with the reverse of ``next_in_face(h)``. The edge of ``h`` disappears,
+        the face of ``h`` loses two from its degree, and the head of
+        ``next_in_face(h)`` is merged with the tail of ``h``.
+
+        This is the elementary move out of which the collapse of a face is
+        built: gluing the sides of a face in non-crossing pairs is a sequence
+        of such folds.
+
+        INPUT:
+
+        - ``h`` -- a half-edge, the one whose edge is folded away
+
+        - ``check`` -- (default: ``2``) the level of checks to perform
+
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+
+        On a radial map, folding twice around a quadrilateral performs the
+        contraction or the deletion of the corresponding edge of the original
+        map::
+
+            sage: m = OrientedMap(vp="(0,1,~0,2)(~1,~2)")
+            sage: R = m.radial_map()
+            sage: r = R.copy(mutable=True)
+            sage: r.fold_corner(4)
+            sage: r.fold_corner(8)
+            sage: r
+            OrientedMap("(0)(~0,~5,~1,~3)(1)(3,5)", "(0,~3,5,~0)(1,~5,3,~1)")
+
+        and indeed the edge 0 of ``m`` gets contracted::
+
+            sage: mc = m.copy(mutable=True)
+            sage: mc.contract_edge(0)
+            sage: sorted(mc.radial_map().vertex_profile()) == sorted(r.vertex_profile())
+            True
+            sage: mc.radial_map().face_profile() == r.face_profile()
+            True
+
+        .. SEEALSO::
+
+            :meth:`fold_edge`, :meth:`radial_map`, :meth:`contract_edge`
+        """
+        if check >= 1:
+            self._assert_mutable()
+            h = self._check_half_edge(h)
+
+        vp = self._vp
+        fp = self._fp
+
+        a = h
+        a1 = a ^ 1
+        b = fp[a]
+        b1 = b ^ 1
+        if check >= 1 and (vp[a1] == -1 or vp[b1] == -1):
+            raise NotImplementedError
+        if b == a:
+            raise ValueError(f"the face of the half-edge {h} has degree one")
+        if b == a1:
+            raise ValueError(f"the half-edge {h} is followed by its opposite half-edge in its face")
+
+        # a and b leave the boundary of their face; a is identified with b1 and
+        # a1 with b, so that the edge of a disappears. Everything is read
+        # before anything is written.
+        pa = self._ep(vp[a])          # the position before a in its face
+        pa1 = self._ep(vp[a1])        # the position before a1 in its face
+        na1 = fp[a1]                  # the position after a1 in its face
+        nb = fp[b]                    # the position after b in its face
+
+        # b takes over the position of a1
+        val = nb if na1 == a else na1
+        if val == a1:
+            val = b
+        fp[b] = val
+        vp[val] = b ^ 1
+
+        # what came before a1 now comes before b
+        if pa1 != a and pa1 != a1 and pa1 != b:
+            fp[pa1] = b
+            vp[b] = pa1 ^ 1
+
+        # the face of a closes over the positions of a and b
+        if nb != a and pa != a and pa != a1:
+            val = b if nb == a1 else nb
+            fp[pa] = val
+            vp[val] = pa ^ 1
+
+        vp[a] = vp[a1] = fp[a] = fp[a1] = -1
+
+        self._clear_trailing_edges()
+
+    def fold_edge(self, h, check=2):
+        r"""
+        Fold the edge of ``h`` onto itself.
+
+        The half-edge ``h`` is identified with its reverse so that the edge
+        becomes a folded edge, of which only ``2 * (h // 2)`` stays active. The
+        two ends of the edge are merged and the face of ``h`` loses one from
+        its degree.
+
+        INPUT:
+
+        - ``h`` -- a half-edge, whose position in its face disappears
+
+        - ``check`` -- (default: ``2``) the level of checks to perform
+
+        An edge can not be folded twice: a ``ValueError`` is raised if the edge
+        of ``h`` is already folded.
+
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+
+            sage: t = OrientedMap(vp="(0,1,2)(~0,~1,~2)", mutable=True)
+            sage: t.num_folded_edges()
+            0
+            sage: t.fold_edge(0)
+            sage: t
+            OrientedMap("(0,~1,~2,1,2)", "(0,2,~1,~2,1)")
+            sage: t.num_folded_edges()
+            1
+
+        The two ends of the edge are merged, and the Euler characteristic is
+        preserved because a folded edge carries a vertex of its own::
+
+            sage: t.num_vertices()
+            1
+            sage: OrientedMap(vp="(0,1,2)(~0,~1,~2)").euler_characteristic()
+            0
+            sage: t.euler_characteristic()
+            0
+
+        .. SEEALSO::
+
+            :meth:`fold_corner`
+        """
+        if check >= 1:
+            self._assert_mutable()
+            h = self._check_half_edge(h)
+
+        vp = self._vp
+        fp = self._fp
+
+        if check >= 1 and vp[h ^ 1] == -1:
+            raise ValueError(f"the edge of the half-edge {h} is already folded")
+
+        s = h & ~1                    # survives, the even half-edge
+        d = h | 1                     # dies
+
+        # h leaves the boundary of its face and is identified with its reverse.
+        # Everything is read before anything is written. Note that the edge of
+        # s is folded in the result, so that ep(s) is s.
+        ph = self._ep(vp[h])          # the position before h in its face
+        ph1 = self._ep(vp[h ^ 1])     # the position before h ^ 1 in its face
+        nh = fp[h]                    # the position after h in its face
+        nh1 = fp[h ^ 1]               # the position after h ^ 1 in its face
+
+        # s takes over the position of h ^ 1
+        val = nh if nh1 == h else nh1
+        if val == d:
+            val = s
+        fp[s] = val
+        vp[val] = s
+
+        # what came before h ^ 1 now comes before s
+        if s == h and ph1 != h and ph1 != d:
+            fp[ph1] = s
+            vp[s] = ph1 ^ 1
+
+        # the face of h closes over the position of h
+        if ph != h and ph != d:
+            val = s if nh == d else nh
+            fp[ph] = val
+            vp[val] = ph if ph == s else ph ^ 1
+
+        vp[d] = fp[d] = -1
+
+        self._clear_trailing_edges()
+
     def contract_edge(self, e, check=2):
         r"""
         Contract the edge ``e``.
