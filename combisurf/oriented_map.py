@@ -1611,7 +1611,7 @@ class OrientedMap:
         """
         return self.forest_coforest_decomposition((root_vertex,), (root_face,))
 
-    def radial_map(self, mapping=False):
+    def radial_map(self, mapping=False, mutable=False):
         r"""
         Return the radial map of this map.
 
@@ -1634,6 +1634,9 @@ class OrientedMap:
           the list of the images of the half-edges. The image of a half-edge is
           the walk of length two it becomes in the radial map, and the image of
           ``ep(h)`` is the reverse of the image of ``h``.
+
+        - ``mutable`` -- boolean (default: ``False``); whether the result is
+          mutable
 
         EXAMPLES::
 
@@ -1682,6 +1685,14 @@ class OrientedMap:
              array('i', [24, 5]),
              array('i', [4, 25])]
 
+        The result is immutable unless ``mutable`` is set::
+
+            sage: m = OrientedMap(vp="(0,1,~0,2)(~1,~2)")
+            sage: m.radial_map().is_mutable()
+            False
+            sage: m.radial_map(mutable=True).is_mutable()
+            True
+
         Raises a ``NotImplementedError`` on maps with folded edge::
 
             sage: OrientedMap("(0)").radial_map()
@@ -1701,7 +1712,7 @@ class OrientedMap:
             rvp[2 * h + 1] = 2 * self._fp[h] + 1
             rfp[2 * self._fp[h]] = 2 * h + 1
             rfp[2 * (h ^ 1) + 1] = 2 * self._fp[h]
-        radial = OrientedMap(vp=rvp, fp=rfp)
+        radial = OrientedMap(vp=rvp, fp=rfp, mutable=mutable)
 
         if not mapping:
             return radial
@@ -1713,9 +1724,6 @@ class OrientedMap:
                 continue
             mor[h] = array('i', [2 * h, 2 * self._fp[h] + 1])
             mor[h + 1] = array('i', [2 * self._fp[h], 2 * h + 1])
-        # TODO: actually return a morphism
-        # from .morphism import OrientedMorphism_list
-        # return OrientedMapMorphism_list(self, radial, mor)
         return radial, mor
 
     #############
