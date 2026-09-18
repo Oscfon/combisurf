@@ -330,8 +330,8 @@ def word_find(array.array u, array.array v, Py_ssize_t start=0, failure_table=No
         sage: [word_find(u, word_init(v), 0, t) for v in ([1, 0, 1, 0], [0, 1, 0], [1, 1])]
         [1, 0, -1]
 
-    This is also what makes it cheap to build the usual variants on top of
-    :func:`word_find`. All the occurrences, including the overlapping ones::
+    The usual variants are built on top of :func:`word_find` this way. All the
+    occurrences, including the overlapping ones::
 
         sage: def occurrences(u, v):
         ....:     t = word_failure_table(u)
@@ -355,6 +355,30 @@ def word_find(array.array u, array.array v, Py_ssize_t start=0, failure_table=No
     time ``O(len(u))`` and the search then takes time ``O(len(v) - start)``, so
     that the whole computation is linear in ``len(u) + len(v)``. When the
     failure table is provided, the search alone is performed.
+
+    That is the cost of a single search. Enumerating all the occurrences as
+    above costs ``O(len(u))`` per occurrence on top of the scan, since each call
+    restarts the automaton, and is not linear overall: on ``u = [0] * k`` inside
+    ``v = [0] * n`` it takes time ``O(n k)``.
+
+    .. TODO::
+
+        Make the enumeration of the occurrences linear. What a call cannot
+        recover from its arguments is the position ``k`` reached in ``u``, which
+        a restart at ``i + 1`` sets back to ``0``; no choice of ``start`` gets
+        around it, as resuming one period after a match is still ``i + 1`` on
+        ``u = [0] * k``. The place for it is a ``word_occurrences`` that keeps
+        ``k`` across the matches, resuming at the longest border of ``u``
+        instead of at ``0``, rather than a further argument of
+        :func:`word_find`, whose signature follows :meth:`str.find`.
+
+        Note that this border is not in the failure table: that table has length
+        ``len(u)``, because :func:`word_find` returns as soon as ``k`` reaches
+        ``len(u)`` and never reads an entry there. It is
+        ``word_border_table(u)[len(u)]``. Using the plain border for the resume
+        and the failure table for the mismatches is correct, the strong variant
+        only skipping shifts that would repeat a comparison known to fail, and
+        there is no such comparison at a match.
 
     TESTS:
 
