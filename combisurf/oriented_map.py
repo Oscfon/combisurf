@@ -1495,6 +1495,78 @@ class OrientedMap:
             # TODO: implement something less costly
             return [cc.genus() for cc in self.connected_components_submaps(relabel=True)]
 
+    def _spanning_forest(self, cycles, h2c, nc, roots, used):
+        r"""
+        Return a spanning forest of the cells ``cycles``, rooted at ``roots``.
+
+        This is the common core of the forest and the coforest of
+        :meth:`forest_coforest_decomposition`: run on the vertices it builds
+        the forest and run on the faces it builds the coforest.
+
+        INPUT:
+
+        - ``cycles`` -- the cells, as the list of their half-edges indexed by
+          cell number, that is the output of :meth:`vertices` or :meth:`faces`
+
+        - ``h2c`` -- the inverse map, sending a half-edge to the index of its
+          cell, that is the output of :meth:`half_edge_to_vertex` or
+          :meth:`half_edge_to_face`
+
+        - ``nc`` -- the number of cells
+
+        - ``roots`` -- ``None`` or the cells the trees are rooted at. A tree
+          never leaves its connected component. When ``None`` the cells that no
+          tree has reached start a new one, which gives exactly one tree per
+          connected component.
+
+        - ``used`` -- an array of flags indexed by the edges, read to skip the
+          edges already taken and written for the ones this call takes
+
+        OUTPUT: an array of length ``nc`` whose entry is ``-1`` at a root, the
+        half-edge joining a cell to its parent at a cell some tree reached, and
+        ``-2`` at a cell no tree reached
+
+        This is exercised through :meth:`forest_coforest_decomposition`.
+        """
+        vp = self._vp
+        forest = array('i', [-2] * nc)
+
+        if roots is None:
+            todo = []
+        else:
+            for c in roots:
+                forest[c] = -1
+            todo = list(roots)
+
+        c0 = 0
+        while True:
+            while todo:
+                c = todo.pop()
+                for h in cycles[c]:
+                    if used[h // 2]:
+                        continue
+                    # a folded edge is a loop: ep(h) is h, so the cell on the
+                    # other side is the one we come from and it never extends
+                    # the forest
+                    if vp[h ^ 1] == -1:
+                        continue
+                    h = h ^ 1
+                    cc = h2c[h]
+                    if forest[cc] == -2:
+                        forest[cc] = h
+                        used[h // 2] = 1
+                        todo.append(cc)
+            if roots is not None:
+                break
+            while c0 < nc and forest[c0] != -2:
+                c0 += 1
+            if c0 == nc:
+                break
+            forest[c0] = -1
+            todo.append(c0)
+
+        return forest
+
     def forest_coforest_decomposition(self, root_vertices=None, root_faces=None):
         r"""
         Return a triple ``(forest, coforest, complementary_edges)`` with the
@@ -1567,85 +1639,15 @@ class OrientedMap:
             ...
             ValueError: root_faces must contain a face of each connected component
         """
-        h2v = self.half_edge_to_vertex()
-        verts = self.vertices()
-        nv = self.num_vertices()
-
-        h2f = self.half_edge_to_face()
-        faces = self.faces()
-        nf = self.num_faces()
-
-        vp = self._vp
-        forest = array('i', [-2] * nv)
-        coforest = array('i', [-2] * nf)
         used = array('i', [0] * (len(self._vp) // 2))
 
-        # build the forest. Without roots every vertex is a candidate and the
-        # ones no tree has reached start a new one, which gives exactly one
-        # tree per connected component.
-        if root_vertices is None:
-            todo = []
-        else:
-            for v in root_vertices:
-                forest[v] = -1
-            todo = list(root_vertices)
-        v0 = 0
-        while True:
-            while todo:
-                h = todo.pop()
-                for hh in verts[h]:
-                    if used[hh // 2]:
-                        continue
-                    # a folded edge is a loop: ep(hh) is hh, whose vertex is
-                    # the one we come from, so it never extends the forest
-                    if vp[hh ^ 1] == -1:
-                        continue
-                    hh = hh ^ 1
-                    v = h2v[hh]
-                    if forest[v] == -2:
-                        forest[v] = hh
-                        used[hh // 2] = 1
-                        todo.append(v)
-            if root_vertices is not None:
-                break
-            while v0 < nv and forest[v0] != -2:
-                v0 += 1
-            if v0 == nv:
-                break
-            forest[v0] = -1
-            todo.append(v0)
-
-        # build the coforest, the same way on the dual
-        if root_faces is None:
-            todo = []
-        else:
-            for f in root_faces:
-                coforest[f] = -1
-            todo = list(root_faces)
-        f0 = 0
-        while True:
-            while todo:
-                h = todo.pop()
-                for hh in faces[h]:
-                    if used[hh // 2]:
-                        continue
-                    # likewise a folded edge has the same face on both sides
-                    if vp[hh ^ 1] == -1:
-                        continue
-                    hh = hh ^ 1
-                    f = h2f[hh]
-                    if coforest[f] == -2:
-                        coforest[f] = hh
-                        used[hh // 2] = 1
-                        todo.append(f)
-            if root_faces is not None:
-                break
-            while f0 < nf and coforest[f0] != -2:
-                f0 += 1
-            if f0 == nf:
-                break
-            coforest[f0] = -1
-            todo.append(f0)
+        # the forest on the vertices, then the coforest the same way on the
+        # faces of the dual. The two share ``used``, so that the coforest only
+        # gets to pick among the edges the forest left.
+        forest = self._spanning_forest(self.vertices(), self.half_edge_to_vertex(),
+                                       self.num_vertices(), root_vertices, used)
+        coforest = self._spanning_forest(self.faces(), self.half_edge_to_face(),
+                                         self.num_faces(), root_faces, used)
 
         # a vertex left at -2 was reached by no tree, that is its component
         # holds no root vertex; likewise for the faces
