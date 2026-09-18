@@ -201,7 +201,7 @@ def test_forest_coforest_with_folded_edges():
         for h in list(m.half_edges()):
             r = m.copy(mutable=True)
             try:
-                r.fold_edge(h)
+                r.fold_half_edge(h)
             except ValueError:
                 continue
             if r.is_connected():

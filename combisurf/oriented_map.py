@@ -2144,22 +2144,22 @@ class OrientedMap:
 
     def fold_corner(self, h, check=2):
         r"""
-        Fold the edge of ``h`` onto the next edge in its face.
+        Fold the half-edge ``h`` onto the next half-edge in its face.
 
-        The two edges bounding the corner of the face of ``h`` at the head of
-        ``h`` get identified: ``ep(h)`` with ``next_in_face(h)``, and ``h``
-        with the reverse of ``next_in_face(h)``. The edge of ``h`` disappears,
-        the face of ``h`` loses two from its degree, and the head of
-        ``next_in_face(h)`` is merged with the tail of ``h``.
+        This operation consists in merging the head of ``next_in_face(h)`` with
+        the tail of ``h``, which identifies ``h`` with ``ep(next_in_face(h))``
+        and ``ep(h)`` with ``next_in_face(h)``. Unless the face of ``h`` is a
+        monogon (see below), the resulting map has one edge less and the face
+        of ``h`` loses two from its degree. By convention it is the edge of
+        ``h`` that disappears.
 
-        When ``next_in_face(h)`` is ``ep(h)`` the corner is bounded by the edge
-        of ``h`` on both sides. The fev relation then forces the head of ``h``
-        to be a vertex of degree one, so that the edge is pruned and the merge
-        of the two ends is a no-op; see :meth:`delete_edge`.
-
-        This is the elementary move out of which the collapse of a face is
-        built: gluing the sides of a face in non-crossing pairs is a sequence
-        of such folds.
+        That identification rule settles the two degenerate corners as well.
+        First, when ``next_in_face(h)`` is ``ep(h)``, both identifications read
+        ``h`` with ``h`` and nothing is glued: the edge is pruned (via a call
+        to :meth:`delete_edge`). Secondly, when ``next_in_face(h)`` is ``h``
+        itself, that is when the face of ``h`` is a monogon, ``h`` is
+        identified with ``ep(h)`` and the edge becomes a folded edge. This is
+        the one case in which the edge of ``h`` survives the fold.
 
         INPUT:
 
@@ -2171,45 +2171,42 @@ class OrientedMap:
 
             sage: from combisurf import OrientedMap
 
-        On a radial map, folding twice around a quadrilateral performs the
-        contraction or the deletion of the corresponding edge of the original
-        map::
+        The edge of ``h`` disappears and its face loses two from its degree::
 
-            sage: m = OrientedMap(vp="(0,1,~0,2)(~1,~2)")
-            sage: R = m.radial_map()
-            sage: r = R.copy(mutable=True)
-            sage: r.fold_corner(4)
-            sage: r.fold_corner(8)
-            sage: r
-            OrientedMap("(0)(~0,~5,~1,~3)(1)(3,5)", "(0,~3,5,~0)(1,~5,3,~1)")
-
-        and indeed the edge 0 of ``m`` gets contracted::
-
-            sage: mc = m.copy(mutable=True)
-            sage: mc.contract_edge(0)
-            sage: sorted(mc.radial_map().vertex_profile()) == sorted(r.vertex_profile())
-            True
-            sage: mc.radial_map().face_profile() == r.face_profile()
-            True
-
-        The corner at the head of a leaf half-edge is bounded by the edge of
-        that half-edge on both sides, and folding it prunes the edge::
-
-            sage: r = OrientedMap(fp="(0,~0,1,~1)", mutable=True)
-            sage: r.fold_corner(0)
-            sage: r
+            sage: m = OrientedMap(fp="(0,1,~0,~1)", mutable=True)
+            sage: m.num_edges(), m.face_profile()
+            (2, [4])
+            sage: m.fold_corner(0)
+            sage: m
             OrientedMap("(1)(~1)", "(1,~1)")
+            sage: m.num_edges(), m.face_profile()
+            (1, [2])
 
-        Doing it once more empties the map::
+        When ``next_in_face(h)`` is ``ep(h)``, that is when the head of ``h``
+        has degree one, the edge is pruned::
 
-            sage: r.fold_corner(3)
-            sage: r
+            sage: m = OrientedMap("(0)(~0)", mutable=True)
+            sage: m
+            OrientedMap("(0)(~0)", "(0,~0)")
+            sage: m.fold_corner(0)
+            sage: m
             OrientedMap("", "")
+
+        When the face of ``h`` is a monogon the edge is glued to itself and
+        stays on as a folded edge::
+
+            sage: m = OrientedMap("(0,~0)", mutable=True)
+            sage: m.face_profile()
+            [1, 1]
+            sage: m.fold_corner(0)
+            sage: m
+            OrientedMap("(0)", "(0)")
+            sage: m.num_folded_edges()
+            1
 
         .. SEEALSO::
 
-            :meth:`fold_edge`, :meth:`radial_map`, :meth:`contract_edge`,
-            :meth:`delete_edge`
+            :meth:`fold_half_edge`, :meth:`delete_edge`
         """
         if check >= 1:
             self._assert_mutable()
@@ -2225,7 +2222,10 @@ class OrientedMap:
         if check >= 1 and (vp[a1] == -1 or vp[b1] == -1):
             raise NotImplementedError
         if b == a:
-            raise ValueError(f"the face of the half-edge {h} has degree one")
+            # the face of a is a monogon and the rule identifies a with ep(a),
+            # gluing the edge to itself rather than removing it
+            self.fold_half_edge(a, check=0)
+            return
         if b == a1:
             # a is a leaf half-edge: its head is a vertex of degree one and the
             # corner is bounded by the edge of a on both sides. Folding it
@@ -2264,23 +2264,28 @@ class OrientedMap:
 
         self._clear_trailing_edges()
 
-    def fold_edge(self, h, check=2):
+    def fold_half_edge(self, h, check=2):
         r"""
-        Fold the edge of ``h`` onto itself.
+        Fold the half-edge ``h`` onto its reverse.
 
-        The half-edge ``h`` is identified with its reverse so that the edge
-        becomes a folded edge, of which only ``2 * (h // 2)`` stays active. The
-        two ends of the edge are merged and the face of ``h`` loses one from
-        its degree.
+        The half-edge ``h`` is identified with ``ep(h)`` so that the edge
+        becomes a folded edge, of which only ``2 * (h // 2)`` stays active.
+        The position of ``h`` disappears from its face, the surviving
+        half-edge takes over the position of ``ep(h)``, and the two ends of
+        the edge are merged.
+
+        The result depends on ``h`` and not only on its edge: folding ``h``
+        and folding ``ep(h)`` give different maps in general, which is why
+        this operation takes a half-edge where :meth:`contract_edge` and
+        :meth:`delete_edge` take an edge.
+
+        A ``ValueError`` is raised if the edge of ``h`` is already folded.
 
         INPUT:
 
         - ``h`` -- a half-edge, whose position in its face disappears
 
         - ``check`` -- (default: ``2``) the level of checks to perform
-
-        An edge can not be folded twice: a ``ValueError`` is raised if the edge
-        of ``h`` is already folded.
 
         EXAMPLES::
 
@@ -2289,11 +2294,22 @@ class OrientedMap:
             sage: t = OrientedMap(vp="(0,1,2)(~0,~1,~2)", mutable=True)
             sage: t.num_folded_edges()
             0
-            sage: t.fold_edge(0)
+            sage: t.fold_half_edge(0)
             sage: t
             OrientedMap("(0,~1,~2,1,2)", "(0,2,~1,~2,1)")
             sage: t.num_folded_edges()
             1
+
+        Folding the other half-edge of the same edge gives a different map::
+
+            sage: t0 = OrientedMap(vp="(0,~0,1,~1)", mutable=True)
+            sage: t0.fold_half_edge(0)
+            sage: t0
+            OrientedMap("(0,1,~1)", "(0,~1)(1)")
+            sage: t1 = OrientedMap(vp="(0,~0,1,~1)", mutable=True)
+            sage: t1.fold_half_edge(1)
+            sage: t1
+            OrientedMap("(0)(1,~1)", "(0)(1)(~1)")
 
         The two ends of the edge are merged, and the Euler characteristic is
         preserved because a folded edge carries a vertex of its own::

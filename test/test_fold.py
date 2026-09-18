@@ -108,6 +108,7 @@ def test_fold_corner_twice_is_delete_edge():
 
 def test_fold_corner_effect():
     for m in sample_maps():
+        fp = m.face_permutation(copy=False)
         for h in m.half_edges():
             r = m.copy(mutable=True)
             try:
@@ -115,16 +116,21 @@ def test_fold_corner_effect():
             except ValueError:
                 continue
             r._check()
-            assert r.num_edges() == m.num_edges() - 1, (m, h)
-            assert r.num_folded_edges() == 0, (m, h)
+            if fp[h] == h:
+                # a monogon glues the edge to itself, so it survives
+                assert r.num_edges() == m.num_edges(), (m, h)
+                assert r.num_folded_edges() == m.num_folded_edges() + 1, (m, h)
+            else:
+                assert r.num_edges() == m.num_edges() - 1, (m, h)
+                assert r.num_folded_edges() == m.num_folded_edges(), (m, h)
 
 
-def test_fold_edge_effect():
+def test_fold_half_edge_effect():
     for m in sample_maps():
         h2v = m.half_edge_to_vertex()
         for h in m.half_edges():
             r = m.copy(mutable=True)
-            r.fold_edge(h)
+            r.fold_half_edge(h)
             r._check()
 
             # the edge becomes folded, keeping its even half-edge
@@ -183,6 +189,36 @@ def test_fold_corner_prunes_a_leaf():
     assert r == OrientedMap("", "")
 
 
+def test_fold_corner_folds_a_monogon():
+    from combisurf import OrientedMap
+
+    # the face of h is a monogon: the rule identifies h with ep(h), so the
+    # edge is glued to itself and stays on as a folded edge
+    tested = 0
+    for m in sample_maps():
+        vp = m.vertex_permutation(copy=False)
+        fp = m.face_permutation(copy=False)
+        for h in m.half_edges():
+            if fp[h] != h:
+                continue
+            tested += 1
+            # the fev relation puts h and ep(h) next to each other at the tail
+            assert vp[h] == h ^ 1, (m, h)
+            r = m.copy(mutable=True)
+            r.fold_corner(h)
+            r._check()
+            assert r.num_edges() == m.num_edges(), (m, h)
+            assert r.num_folded_edges() == m.num_folded_edges() + 1, (m, h)
+            assert r.num_faces() == m.num_faces() - 1, (m, h)
+            assert r.num_vertices() == m.num_vertices(), (m, h)
+            assert r.euler_characteristic() == m.euler_characteristic(), (m, h)
+            # which is exactly folding the edge outright
+            s = m.copy(mutable=True)
+            s.fold_half_edge(h)
+            assert r == s, (m, h)
+    assert tested
+
+
 def test_fold_corner_errors():
     from combisurf import OrientedMap
 
@@ -193,18 +229,18 @@ def test_fold_corner_errors():
         f.fold_corner(0)
 
 
-def test_fold_edge_twice():
+def test_fold_half_edge_twice():
     from combisurf import OrientedMap
 
     # an edge can not be folded twice
     for m in sample_maps():
         for h in m.half_edges():
             r = m.copy(mutable=True)
-            r.fold_edge(h)
+            r.fold_half_edge(h)
             for x in (h, h ^ 1):
                 if x in list(r.half_edges()):
                     with pytest.raises(ValueError, match="already folded"):
-                        r.fold_edge(x)
+                        r.fold_half_edge(x)
 
 
 def test_fold_requires_mutable():
@@ -213,7 +249,7 @@ def test_fold_requires_mutable():
         with pytest.raises(ValueError):
             m.fold_corner(h)
         with pytest.raises(ValueError):
-            m.fold_edge(h)
+            m.fold_half_edge(h)
 
 
 def maps_with_a_folded_edge():
@@ -224,7 +260,7 @@ def maps_with_a_folded_edge():
     for m in sample_maps():
         for h in m.half_edges():
             r = m.copy(mutable=True)
-            r.fold_edge(h)
+            r.fold_half_edge(h)
             out.append(r)
     return out
 
@@ -246,19 +282,19 @@ def test_fold_corner_next_to_a_folded_edge():
             r._check()
 
 
-def test_fold_edge_next_to_a_folded_edge():
+def test_fold_half_edge_next_to_a_folded_edge():
     from combisurf import OrientedMap
 
     m = OrientedMap("(0,~0,2)(1,~1)", "(0)(~0,2)(1)(~1)", mutable=True)
     assert m.num_folded_edges() == 1
-    m.fold_edge(0)
+    m.fold_half_edge(0)
     m._check()
 
     for m in maps_with_a_folded_edge():
         for h in list(m.half_edges()):
             r = m.copy(mutable=True)
             try:
-                r.fold_edge(h)
+                r.fold_half_edge(h)
             except (ValueError, NotImplementedError):
                 continue
             r._check()
