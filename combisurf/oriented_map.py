@@ -1611,7 +1611,7 @@ class OrientedMap:
         """
         return self.forest_coforest_decomposition((root_vertex,), (root_face,))
 
-    def radial_map(self):
+    def radial_map(self, mapping=False):
         r"""
         Return the radial map of this map.
 
@@ -1628,6 +1628,13 @@ class OrientedMap:
         edges or cycles of negatively oriented edges. In particular, the
         bipartition of vertices is visible on the labelling.
 
+        INPUT:
+
+        - ``mapping`` -- boolean (default: ``False``); whether to also return
+          the list of the images of the half-edges. The image of a half-edge is
+          the walk of length two it becomes in the radial map, and the image of
+          ``ep(h)`` is the reverse of the image of ``h``.
+
         EXAMPLES::
 
             sage: from combisurf import OrientedMap
@@ -1641,42 +1648,25 @@ class OrientedMap:
             sage: m.radial_map()
             OrientedMap("(0,6,12,7)(~0,~3,~1,~7)(1,2,13,3)(~2,~13,~6,~12)", "(0,~7,12,~6)(~0,7,~1,3)(1,~3,13,~2)(2,~12,6,~13)")
 
-        Raises a ``NotImplementedError`` on maps with folded edge::
+        With ``mapping``, the images of the half-edges are returned as well::
 
-            sage: OrientedMap("(0)").radial_morphism()
-            Traceback (most recent call last):
-            ...
-            NotImplementedError
-        """
-        if self.has_folded_edge():
-            raise NotImplementedError
-        n = len(self._vp)
-        rvp = array('i', [-1] * (2 * n))
-        rfp = array('i', [-1] * (2 * n))
-        for h in range(n):
-            if self._vp[h] == -1:
-                continue
-            rvp[2 * h] = 2 * self._vp[h]
-            rvp[2 * h + 1] = 2 * self._fp[h] + 1
-            rfp[2 * self._fp[h]] = 2 * h + 1
-            rfp[2 * (h ^ 1) + 1] = 2 * self._fp[h]
-        return OrientedMap(vp=rvp, fp=rfp)
-
-    def radial_morphism(self):
-        r"""
-        EXAMPLES::
-
-            sage: from combisurf import OrientedMap
             sage: m = OrientedMap(vp="(0,1,~0,2)(~1,~2)")
-            sage: m.radial_morphism()
+            sage: radial, mor = m.radial_map(mapping=True)
+            sage: mor
             [array('i', [0, 5]),
              array('i', [4, 1]),
              array('i', [4, 11]),
              array('i', [10, 5]),
              array('i', [8, 7]),
              array('i', [6, 9])]
+            sage: all(list(mor[h ^^ 1]) == [mor[h][1] ^^ 1, mor[h][0] ^^ 1]
+            ....:     for h in m.half_edges())
+            True
+
+        Inactive half-edges have no image::
+
             sage: m = OrientedMap(vp="(0,3,6,~3)(~0,1,~6,~1)")
-            sage: m.radial_morphism()
+            sage: m.radial_map(mapping=True)[1]
             [array('i', [0, 7]),
              array('i', [6, 1]),
              array('i', [4, 27]),
@@ -1694,7 +1684,7 @@ class OrientedMap:
 
         Raises a ``NotImplementedError`` on maps with folded edge::
 
-            sage: OrientedMap("(0)").radial_morphism()
+            sage: OrientedMap("(0)").radial_map()
             Traceback (most recent call last):
             ...
             NotImplementedError
@@ -1702,6 +1692,20 @@ class OrientedMap:
         if self.has_folded_edge():
             raise NotImplementedError
         n = len(self._vp)
+        rvp = array('i', [-1] * (2 * n))
+        rfp = array('i', [-1] * (2 * n))
+        for h in range(n):
+            if self._vp[h] == -1:
+                continue
+            rvp[2 * h] = 2 * self._vp[h]
+            rvp[2 * h + 1] = 2 * self._fp[h] + 1
+            rfp[2 * self._fp[h]] = 2 * h + 1
+            rfp[2 * (h ^ 1) + 1] = 2 * self._fp[h]
+        radial = OrientedMap(vp=rvp, fp=rfp)
+
+        if not mapping:
+            return radial
+
         mor = [None] * n
         for e in range(n // 2):
             h = 2 * e
@@ -1711,8 +1715,8 @@ class OrientedMap:
             mor[h + 1] = array('i', [2 * self._fp[h], 2 * h + 1])
         # TODO: actually return a morphism
         # from .morphism import OrientedMorphism_list
-        # return OrientedMapMorphism_list(self, self.radial_map(), mor)
-        return mor
+        # return OrientedMapMorphism_list(self, radial, mor)
+        return radial, mor
 
     #############
     # Mutations #
