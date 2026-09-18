@@ -1726,6 +1726,254 @@ class OrientedMap:
             mor[h + 1] = array('i', [2 * self._fp[h], 2 * h + 1])
         return radial, mor
 
+    def quad_system(self, forest=None, coforest=None, relabel=False, mapping=False, mutable=False, check=True):
+        r"""
+        Return the quad system of this map for the given forest and coforest.
+
+        The quad system is obtained from the radial map by contracting the
+        edges of ``forest`` and deleting the edges of ``coforest``, each of
+        which amounts to folding the two corners of the corresponding
+        quadrilateral, see :meth:`fold_corner`. When ``forest`` and
+        ``coforest`` are spanning, the result is a quadrangulation of the same
+        surface with two vertices of degree `4g`, `4g` edges and `2g`
+        quadrilateral faces.
+
+        INPUT:
+
+        - ``forest``, ``coforest`` -- (default: ``None``) the half-edges of the
+          edges to contract and to delete, in the format returned by
+          :meth:`forest_coforest_decomposition`; entries equal to ``-1`` are
+          ignored. When both are ``None`` a decomposition is computed. Listing
+          the same edge twice raises a ``ValueError``.
+
+        - ``relabel`` -- boolean (default: ``False``); whether to relabel the
+          result on ``0, 1, ..., 2 * ne - 1`` so that it has no inactive
+          half-edge. Folding never renumbers, so without this the labels of the
+          radial map are kept and are sparse. The relabelling goes edge by edge
+          and preserves the parity of each half-edge inside its edge, so that
+          the bipartition of the vertices stays visible on the labels.
+
+        - ``mapping`` -- boolean (default: ``False``); whether to also return
+          the projection, a list indexed by the half-edges of this map giving
+          for each of them the walk of length zero or two it becomes in the
+          quad system
+
+        - ``mutable`` -- boolean (default: ``False``); whether the result is
+          mutable
+
+        - ``check`` -- boolean (default: ``True``); whether to check the input
+
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+            sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
+            sage: m.genus()
+            2
+            sage: q = m.quad_system()
+            sage: q.num_vertices(), q.num_edges(), q.num_faces()
+            (2, 8, 4)
+            sage: q.vertex_profile()
+            [8, 8]
+            sage: q.face_profile()
+            [4, 4, 4, 4]
+
+        The projection is the mapping of :meth:`radial_map` followed by the
+        folds. It sends a half-edge to a walk of length zero or two, the
+        length being zero exactly when the folds identify the two half-edges
+        of its image in the radial map. That is always the case for a
+        half-edge of a contracted edge and for a half-edge of a monogon face,
+        and it happens for some half-edges of deleted edges as well. The walk
+        of ``ep(h)`` is the reverse of the walk of ``h``::
+
+            sage: q, proj = m.quad_system(mapping=True)
+            sage: sorted(set(len(p) for p in proj if p is not None))
+            [0, 2]
+            sage: all(list(proj[h ^^ 1]) == [proj[h][1] ^^ 1, proj[h][0] ^^ 1]
+            ....:     for h in m.half_edges() if proj[h])
+            True
+
+        A half-edge of a deleted edge may have empty image too::
+
+            sage: mm = OrientedMap("(0,~2,4,~1,~0,3)(1,~4)(2,~3)", "(0,~1,~4,~2,~3,~0,3,2)(1,4)")
+            sage: forest, coforest, _ = mm.forest_coforest_decomposition()
+            sage: [h // 2 for h in coforest if h != -1]
+            [1]
+            sage: q, proj = mm.quad_system(forest, coforest, mapping=True)
+            sage: proj[2], proj[3]
+            (array('i'), array('i'))
+
+        Folding never renumbers, so the labels of the radial map are kept and
+        are sparse; ``relabel`` compacts them, the projection included::
+
+            sage: list(m.quad_system().half_edges())
+            [0, 1, 2, 3, 6, 7, 8, 9, 10, 11, 20, 21, 22, 23, 26, 27]
+            sage: list(m.quad_system(relabel=True).half_edges())
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+            sage: q, proj = m.quad_system(relabel=True, mapping=True)
+            sage: all(x in list(q.half_edges()) for p in proj for x in p)
+            True
+
+        .. SEEALSO::
+
+            :meth:`radial_map`, :meth:`fold_corner`,
+            :meth:`forest_coforest_decomposition`
+
+        ALGORITHM:
+
+        The folds are performed on a copy of the radial map, in which the edge
+        ``e`` of this map is a quadrilateral face whose four sides alternate
+        parity, the parity of a half-edge of the radial map being the side of
+        the bipartition its tail belongs to. Contracting ``e`` folds the two
+        even sides of that quadrilateral and deleting ``e`` folds the two odd
+        ones.
+
+        Folding relabels: :meth:`fold_corner` at ``a`` reads ``b = fp[a]`` and
+        makes ``b`` take over the position of ``a ^ 1``. So the sides computed
+        on the initial radial map may be dead by the time they are needed. To
+        avoid resolving names on the fly we keep, for each edge ``e``, one live
+        half-edge ``handle[e]`` lying on its quadrilateral together with the
+        inverse map ``owner``. The four sides are then recovered in constant
+        time by walking the face of the handle, and the two of the wanted
+        parity can both be read before folding, since two half-edges of equal
+        parity are never opposite to each other. A handle dies only as the
+        ``a`` or the ``a ^ 1`` of a fold: in the first case its quadrilateral
+        is the one being collapsed, that is the edge currently processed, and
+        in the second case ``b`` is its replacement.
+
+        The projection, on the other hand, is only read once every fold has
+        been performed. The dying half-edges are linked to the ones they are
+        identified with and a single pass with path compression resolves the
+        whole forest of links at the end, so that the method is linear.
+        """
+        if self.has_folded_edge():
+            raise NotImplementedError
+
+        if forest is None and coforest is None:
+            forest, coforest, _ = self.forest_coforest_decomposition()
+        elif forest is None or coforest is None:
+            raise ValueError("forest and coforest must be given together")
+
+        vp = self._vp
+        n = len(vp)
+
+        quad = self.radial_map(mapping=mapping, mutable=True)
+        if mapping:
+            quad, mor = quad
+        qfp = quad.face_permutation(copy=False)
+
+        # handle[e] is a live half-edge of quad lying on the quadrilateral of
+        # the edge e of this map and owner is its inverse; this is what keeps
+        # track of where each quadrilateral went as folding relabels half-edges
+        handle = array('i', [-1] * (n // 2))
+        owner = array('i', [-1] * (2 * n))
+        for e in range(n // 2):
+            if vp[2 * e] != -1:
+                handle[e] = 4 * e + 1
+                owner[4 * e + 1] = e
+
+        # the half-edges of the radial map that die get linked to the ones they
+        # are identified with; only the projection needs them
+        link = array('i', [-1] * (2 * n)) if mapping else None
+
+        for parity, edges in ((0, forest), (1, coforest)):
+            for h in edges:
+                if h == -1:
+                    continue
+                if check:
+                    h = self._check_half_edge(h)
+                x = handle[h // 2]
+                if x == -1:
+                    raise ValueError(f"the edge of the half-edge {h} is listed twice")
+                # the handle is dropped before folding: the two fold arguments
+                # are all that is needed from this quadrilateral, and a handle
+                # left behind would turn into a stale owner entry that a later
+                # fold could use to overwrite a live one
+                handle[h // 2] = owner[x] = -1
+
+                # the four sides alternate parity; contracting folds the two
+                # even ones and deleting the two odd ones. Two half-edges of
+                # equal parity are never opposite, so the first fold does not
+                # invalidate the second argument.
+                a0 = a1 = -1
+                for _ in range(4):
+                    if x & 1 == parity:
+                        if a0 == -1:
+                            a0 = x
+                        else:
+                            a1 = x
+                    x = qfp[x]
+
+                for a in (a0, a1):
+                    b = qfp[a]
+                    quad.fold_corner(a, check=1)
+                    # b takes over the position of a ^ 1, hence lies on the
+                    # same face
+                    f = owner[a ^ 1]
+                    if f != -1:
+                        handle[f] = b
+                        owner[b] = f
+                    owner[a] = owner[a ^ 1] = -1
+                    if mapping:
+                        link[a] = b ^ 1
+                        link[a ^ 1] = b
+
+        if mapping:
+            # every link is final here, so a single pass with path compression
+            # resolves them all, each slot being compressed at most once
+            stack = []
+            for x in range(2 * n):
+                if link[x] == -1:
+                    continue
+                y = x
+                while link[y] != -1:
+                    stack.append(y)
+                    y = link[y]
+                while stack:
+                    link[stack.pop()] = y
+
+        relabelling = None
+        if relabel:
+            qvp = quad.vertex_permutation(copy=False)
+            qfp = quad.face_permutation(copy=False)
+            nq = len(qvp)
+            relabelling = array('i', [-1] * nq)
+            ne = 0
+            for y in range(0, nq, 2):
+                if qvp[y] != -1:
+                    relabelling[y] = 2 * ne
+                    relabelling[y + 1] = 2 * ne + 1
+                    ne += 1
+            fp_new = array('i', [-1] * (2 * ne))
+            for y in range(nq):
+                if qfp[y] != -1:
+                    fp_new[relabelling[y]] = relabelling[qfp[y]]
+            quad = OrientedMap(fp=fp_new, mutable=True, check=check)
+
+        if not mutable:
+            quad.set_immutable()
+
+        if not mapping:
+            return quad
+
+        proj = []
+        for h in range(n):
+            if vp[h] == -1:
+                proj.append(None)
+                continue
+            a = mor[h][0]
+            b = mor[h][1]
+            if link[a] != -1:
+                a = link[a]
+            if link[b] != -1:
+                b = link[b]
+            if b == a ^ 1:
+                proj.append(array('i', []))
+            elif relabelling is None:
+                proj.append(array('i', [a, b]))
+            else:
+                proj.append(array('i', [relabelling[a], relabelling[b]]))
+        return quad, proj
+
     #############
     # Mutations #
     #############
