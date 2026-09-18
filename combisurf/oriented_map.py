@@ -1524,14 +1524,19 @@ class OrientedMap:
             (array('i', [-1, 8, -1, 20, -1]),
              array('i', [2, -1, 7, 22]),
              array('i', [2, 5, 6, 7, 8, 9]))
+
+        The empty map has one vertex and one face, both roots, and no edge::
+
+            sage: OrientedMap().forest_coforest_decomposition()
+            (array('i', [-1]), array('i', [-1]), array('i'))
         """
         h2v = self.half_edge_to_vertex()
         verts = self.vertices()
-        nv = max(h2v) + 1
+        nv = self.num_vertices()
 
         h2f = self.half_edge_to_face()
         faces = self.faces()
-        nf = max(h2f) + 1
+        nf = self.num_faces()
 
         vp = self._vp
         forest = array('i', [-2] * nv)

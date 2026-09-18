@@ -79,6 +79,26 @@ def test_forest_coforest():
                     assert sum(f in cc for f in root_faces) == 1
 
 
+def test_forest_coforest_empty_map():
+    # the empty map has one vertex, one face and no edge, so its decomposition
+    # is the two roots and nothing else
+    from combisurf import OrientedMap
+
+    z = OrientedMap()
+    assert z.num_vertices() == 1 and z.num_faces() == 1 and z.num_edges() == 0
+
+    forest, coforest, comp = z.forest_coforest_decomposition()
+    assert list(forest) == [-1]
+    assert list(coforest) == [-1]
+    assert list(comp) == []
+    assert z.tree_cotree_decomposition() == z.forest_coforest_decomposition()
+
+    # and the quad system of the empty map is the empty map
+    assert z.quad_system() == z
+    q, proj = z.quad_system(mapping=True)
+    assert q == z and proj == []
+
+
 def test_forest_coforest_with_folded_edges():
     # a folded edge is a loop, so the search skips it: it is never a forest or
     # a coforest edge and it always ends up complementary. The decomposition
