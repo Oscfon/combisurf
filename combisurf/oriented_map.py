@@ -37,7 +37,7 @@ from array import array
 from sage.structure.richcmp import op_LT, op_LE, op_EQ, op_NE, op_GT, op_GE, rich_to_bool
 
 from combisurf.misc import array_hash
-from combisurf.permutation import (perm_init, perm_check, perm_cycles, perm_on_array, perm_on_edge_array,
+from combisurf.permutation import (perm_init, perm_check, perm_trim, perm_cycles, perm_on_array, perm_on_edge_array,
                           perm_invert, perm_conjugate, perm_conjugate_transposition_inplace, perm_cycle_string, perm_dense_cycles, perm_cycles_lengths,
                           perm_cycles_to_string, perm_on_list, perm_on_edge_list, perm_cycle_type,
                           perm_num_cycles, str_to_cycles, str_to_cycles_and_data, perm_compose, perm_from_base64_str,
@@ -90,14 +90,6 @@ def check_relabelling(arg, ne):
 
     return p
 
-
-
-def remove_trailing_minus_ones(p):
-    while p and p[-2] == -1:
-        if p[-1] != -1:
-            raise ValueError("invalid permutation")
-        p.pop()
-        p.pop()
 
 # half-edge versus dart
 
@@ -251,9 +243,6 @@ class OrientedMap:
         if len(vp) != len(fp):
             raise ValueError(f"inconsistent input: vp has length {len(vp)} while fp has length {len(fp)}")
 
-        remove_trailing_minus_ones(vp)
-        remove_trailing_minus_ones(fp)
-
         self._vp = vp
         self._fp = fp
         self._mutable = mutable
@@ -261,6 +250,14 @@ class OrientedMap:
         if check:
             self._check(ValueError)
 
+    def _clear_trailing_edges(self):
+        vp = self._vp
+        fp = self._fp
+        while vp and vp[-2] == -1:
+            vp.pop()
+            vp.pop()
+            fp.pop()
+            fp.pop()
 
     def _half_edge_string(self, e):
         return '~%d' % (e // 2) if e % 2 else '%d' % (e // 2)
@@ -1388,7 +1385,7 @@ class OrientedMap:
                 else:
                     vp[h] = h_image
 
-        assert perm_check(vp)
+        perm_trim(vp)
         return OrientedMap(vp=vp, mutable=mutable, check=check)
 
     def connected_components_submaps(self, relabel=False, mutable=False):
@@ -1927,11 +1924,7 @@ class OrientedMap:
 
             vp[h0] = vp[h1] = fp[h0] = fp[h1] = -1
 
-        while vp and vp[-2] == -1:
-            vp.pop()
-            vp.pop()
-            fp.pop()
-            fp.pop()
+        self._clear_trailing_edges()
 
     def delete_edge(self, e, check=2):
         r"""
@@ -2056,11 +2049,7 @@ class OrientedMap:
 
             vp[h0] = vp[h1] = fp[h0] = fp[h1] = -1
 
-        while vp and vp[-2] == -1:
-            vp.pop()
-            vp.pop()
-            fp.pop()
-            fp.pop()
+        self._clear_trailing_edges()
 
     def add_edge(self, h0=-1, h1=-1, e=None, check=2):
         r"""
@@ -2400,8 +2389,8 @@ class OrientedMap:
 
         self._vp = perm_conjugate(self._vp, p)
         self._fp = perm_conjugate(self._fp, p)
-        remove_trailing_minus_ones(self._vp)
-        remove_trailing_minus_ones(self._fp)
+
+        self._clear_trailing_edges()
 
     # TODO: should we make it possible to choose the triangulation? Right now
     # we just pick the dual to a path.
@@ -3104,8 +3093,7 @@ class OrientedMap:
         self._fp[oh2] = -1
         self._fp[oh3] = -1
 
-        remove_trailing_minus_ones(self._fp)
-        remove_trailing_minus_ones(self._vp)
+        self._clear_trailing_edges()
 
     def disjoint_union(self, *others, check=True):
         r"""

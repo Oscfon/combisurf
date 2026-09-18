@@ -28,6 +28,16 @@ def test_order():
     assert perm_order(p) == 6
 
 
+def test_trim():
+    from combisurf.permutation import perm_init, perm_trim
+
+    for data in [[], [0], [1, 0], [2, 1, 0]]:
+        for n in range(4):
+            p = perm_init(data + [-1] * n)
+            perm_trim(p)
+            assert p == perm_init(data)
+
+
 def test_cycles():
     from combisurf.permutation import perm_random, perm_cycles, perm_are_in_same_orbit, perm_dense_cycles, perm_dense_cycle_positions
 

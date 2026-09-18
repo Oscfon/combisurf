@@ -189,6 +189,28 @@ def perm_check(l, int n=-1, involution=None):
     return True
 
 
+def perm_trim(array.array p):
+    r"""
+    Clear trailing `-1` from the array ``p`` inplace.
+
+    EXAMPLES::
+
+        sage: from combisurf.permutation import perm_init, perm_trim
+        sage: p = perm_init([3, 1, 0, 2, -1])
+        sage: p
+        array('i', [3, 1, 0, 2, -1])
+        sage: perm_trim(p)
+        sage: p
+        array('i', [3, 1, 0, 2])
+    """
+    if not p:
+        return
+    cdef int n = len(p) - 1
+    while n >= 0 and p.data.as_ints[n] == -1:
+        n -= 1
+    array.resize(p, n + 1)
+
+
 def perm_id(int n):
     r"""
     Return the identity permutation.
