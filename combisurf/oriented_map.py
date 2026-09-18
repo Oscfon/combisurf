@@ -2250,17 +2250,16 @@ class OrientedMap:
         fp[b] = val
         vp[val] = b ^ 1
 
-        # what came before a1 now comes before b. The neighbour pa1 may lie
-        # on a folded edge, in which case ep(pa1) is pa1 and not pa1 ^ 1.
+        # what came before a1 now comes before b
         if pa1 != a and pa1 != a1 and pa1 != b:
             fp[pa1] = b
-            vp[b] = pa1 if vp[pa1 ^ 1] == -1 else pa1 ^ 1
+            vp[b] = self._ep(pa1)
 
         # the face of a closes over the positions of a and b
         if nb != a and pa != a and pa != a1:
             val = b if nb == a1 else nb
             fp[pa] = val
-            vp[val] = pa if vp[pa ^ 1] == -1 else pa ^ 1
+            vp[val] = self._ep(pa)
 
         vp[a] = vp[a1] = fp[a] = fp[a1] = -1
 
@@ -2358,13 +2357,15 @@ class OrientedMap:
         # what came before h ^ 1 now comes before s
         if s == h and ph1 != h and ph1 != d:
             fp[ph1] = s
-            vp[s] = ph1 if vp[ph1 ^ 1] == -1 else ph1 ^ 1
+            vp[s] = self._ep(ph1)
 
         # the face of h closes over the position of h
         if ph != h and ph != d:
             val = s if nh == d else nh
             fp[ph] = val
-            vp[val] = ph if ph == s or vp[ph ^ 1] == -1 else ph ^ 1
+            # ep(s) is s in the result, but vp[d] is only cleared below, so
+            # _ep does not see the fold yet and ph == s is settled by hand
+            vp[val] = s if ph == s else self._ep(ph)
 
         vp[d] = fp[d] = -1
 
