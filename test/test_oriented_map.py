@@ -224,6 +224,42 @@ def small_maps(folded=True):
     yield OrientedMap("(0,~1,~0,1)")
     yield OrientedMap("(0,~1,1,~0)")
 
+    # the same shapes with edge 0 inactive: the labels of a map need not start
+    # at 0, and neither the mutations nor the vertex and face indexing may
+    # assume that they do
+    if folded:
+        yield OrientedMap("(1)")
+
+    yield OrientedMap("(1,~1)")
+    yield OrientedMap("(1)(~1)")
+    yield OrientedMap("(1,2)(~1)(~2)")
+    yield OrientedMap("(1,~1,2,~2)")
+
+
+def test_inactive_edge_zero():
+    # vertex and face indices come from perm_dense_cycles, which numbers only
+    # the active cycles, so index 0 is a real vertex even here
+    from combisurf import OrientedMap
+    from pickle import loads, dumps
+
+    m = OrientedMap(vp="(2,1,5)(~1,~2,~5)")
+    m._check()
+    assert m.vertex_permutation(copy=False)[0] == -1
+    assert list(m.half_edges()) == [2, 3, 4, 5, 10, 11]
+    assert m.num_vertices() == 2 and m.num_faces() == 3
+
+    assert loads(dumps(m)) == m
+    assert m.copy() == m
+    assert hash(m) == hash(m.copy())
+
+    # the default roots are vertex 0 and face 0, which exist
+    assert m.forest_coforest_decomposition() == m.forest_coforest_decomposition((0,), (0,))
+
+    r = m.copy(mutable=True)
+    r.relabel()
+    r._check()
+    assert list(r.half_edges()) == [0, 1, 2, 3, 4, 5]
+
 
 def test_reverse_orientation():
     for m0 in small_maps(folded=False):
