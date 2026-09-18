@@ -208,3 +208,112 @@ def test_forest_coforest_with_folded_edges():
                 check(r)
                 tested += 1
     assert tested
+
+
+def test_forest_coforest_root_validation():
+    # a root must be a cell index and no cell may be rooted twice. None of
+    # these used to be caught: an index past the end gave a raw IndexError, a
+    # negative one silently wrapped around and named another cell, and a
+    # repeat was accepted and quietly broke the count of trees.
+    from combisurf import OrientedMap
+
+    m = OrientedMap(vp="(0,1,2)(~0,~1,~2)")
+    nv, nf = m.num_vertices(), m.num_faces()
+    assert (nv, nf) == (2, 1)
+
+    # out of range, on either side
+    for bad in (nv, nv + 1, 10 ** 6):
+        with pytest.raises(ValueError, match=r"root_vertices must consist of integers"):
+            m.forest_coforest_decomposition((bad,), (0,))
+    for bad in (nf, nf + 3):
+        with pytest.raises(ValueError, match=r"root_faces must consist of integers"):
+            m.forest_coforest_decomposition((0,), (bad,))
+
+    # negative indices are rejected rather than wrapping around
+    for bad in (-1, -nv, -10):
+        with pytest.raises(ValueError, match=r"root_vertices must consist of integers"):
+            m.forest_coforest_decomposition((bad,), (0,))
+    with pytest.raises(ValueError, match=r"root_faces must consist of integers"):
+        m.forest_coforest_decomposition((0,), (-1,))
+
+    # the message names the offending value
+    with pytest.raises(ValueError, match=r"range\(2\), got 7"):
+        m.forest_coforest_decomposition((7,), (0,))
+
+    # a repeated root
+    with pytest.raises(ValueError, match=r"root_vertices lists 0 twice"):
+        m.forest_coforest_decomposition((0, 0), (0,))
+    with pytest.raises(ValueError, match=r"root_vertices lists 1 twice"):
+        m.forest_coforest_decomposition((1, 0, 1), (0,))
+    with pytest.raises(ValueError, match=r"root_faces lists 0 twice"):
+        m.forest_coforest_decomposition((0, 1), (0, 0))
+
+    # a non integer
+    for bad in (0.5, "0", None, [0]):
+        with pytest.raises(TypeError, match=r"in root_vertices"):
+            m.forest_coforest_decomposition((bad,), (0,))
+    with pytest.raises(TypeError, match=r"in root_faces"):
+        m.forest_coforest_decomposition((0,), (0.5,))
+
+    # the check happens before anything is built, so a bad coforest root is
+    # reported even though the forest is fine
+    with pytest.raises(ValueError, match=r"root_faces"):
+        m.forest_coforest_decomposition((0, 1), (1,))
+
+    # tree_cotree_decomposition goes through the same validation
+    with pytest.raises(ValueError, match=r"root_vertices must consist of integers"):
+        m.tree_cotree_decomposition(nv, 0)
+    with pytest.raises(ValueError, match=r"root_faces must consist of integers"):
+        m.tree_cotree_decomposition(0, nf)
+    with pytest.raises(ValueError, match=r"root_vertices must consist of integers"):
+        m.tree_cotree_decomposition(-1, 0)
+
+
+def test_forest_coforest_roots_are_read_once():
+    # the roots used to be iterated twice, so a generator lost them all after
+    # the first pass and the method blamed the caller for missing a component
+    from combisurf import OrientedMap
+
+    m = OrientedMap(vp="(0,1,2)(~0,~1,~2)")
+    expected = m.forest_coforest_decomposition([0, 1], [0])
+
+    for roots in ((x for x in [0, 1]), iter([0, 1]), (0, 1), [0, 1], {0, 1}):
+        assert m.forest_coforest_decomposition(roots, [0]) == expected
+
+    assert m.forest_coforest_decomposition([0], (x for x in [0])) == \
+        m.forest_coforest_decomposition([0], [0])
+
+
+def test_forest_coforest_sage_integer_roots():
+    # sage Integers are numbers.Integral and must be accepted, since that is
+    # what a doctest or any sage level caller passes
+    from sage.all import Integer
+    from combisurf import OrientedMap
+
+    m = OrientedMap(vp="(0,1,2)(~0,~1,~2)")
+    assert m.forest_coforest_decomposition([Integer(0)], [Integer(0)]) == \
+        m.forest_coforest_decomposition([0], [0])
+    with pytest.raises(ValueError, match=r"root_vertices must consist of integers"):
+        m.forest_coforest_decomposition([Integer(5)], [Integer(0)])
+
+    # a sage real is not an integer, and is rejected like a python float
+    from sage.all import RealNumber
+    with pytest.raises(TypeError, match=r"in root_vertices"):
+        m.forest_coforest_decomposition([RealNumber('0.5')], [Integer(0)])
+
+
+def test_forest_coforest_all_roots_valid_on_the_corpus():
+    # every root the tests feed the method is accepted, so the new validation
+    # rejects nothing it should not
+    from combisurf import OrientedMap
+    from test_fold import maps_with_a_folded_edge
+
+    for m in maps_with_a_folded_edge():
+        nv, nf = m.num_vertices(), m.num_faces()
+        for root_vertices in some_roots(nv):
+            for root_faces in some_roots(nf):
+                try:
+                    m.forest_coforest_decomposition(root_vertices, root_faces)
+                except ValueError as e:
+                    # only the "each connected component" complaint is allowed
+                    assert "connected component" in str(e), (m, root_vertices, root_faces, e)
