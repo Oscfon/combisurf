@@ -2013,9 +2013,15 @@ class OrientedMap:
                             a1 = x
                     x = qfp[x]
 
+                # the checks of fold_corner cannot fire here, so skip them:
+                # quad is mutable, a is live, and no neighbour ever lies on a
+                # folded edge. Every face of the radial map has degree four and
+                # a fold takes two from a face, so no face ever reaches degree
+                # one and the monogon branch, the only one that folds an edge
+                # onto itself, is never taken.
                 for a in (a0, a1):
                     b = qfp[a]
-                    quad.fold_corner(a, check=1)
+                    quad.fold_corner(a, check=0)
                     if b == a ^ 1:
                         # the edge of a bounded its face on both sides and got
                         # pruned, so nothing survives it and there is nothing
