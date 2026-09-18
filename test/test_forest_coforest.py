@@ -77,3 +77,48 @@ def test_forest_coforest():
                 assert C.is_forest()
                 for cc in C.connected_components(sort=False):
                     assert sum(f in cc for f in root_faces) == 1
+
+
+def test_forest_coforest_with_folded_edges():
+    # a folded edge is a loop, so the search skips it: it is never a forest or
+    # a coforest edge and it always ends up complementary. The decomposition
+    # used to name its inactive half-edge instead.
+    from combisurf import OrientedMap
+    from test_fold import maps_with_a_folded_edge
+
+    def check(m):
+        vp = m.vertex_permutation(copy=False)
+        forest, coforest, comp = m.forest_coforest_decomposition()
+        active = set(m.half_edges())
+        folded = {e for e in m.edge_indices() if vp[(2 * e) ^ 1] == -1}
+        assert folded, m
+        for h in list(forest) + list(coforest):
+            if h == -1:
+                continue
+            # the surviving half-edge of a folded edge is active, so being
+            # active is not enough: the edge itself must not be folded
+            assert h in active, (m, h)
+            assert h // 2 not in folded, (m, h)
+        assert folded <= set(comp), (m, folded, list(comp))
+
+    f = OrientedMap("(0,2,~2)")
+    assert f.has_folded_edge()
+    check(f)
+
+    tested = 0
+    for m in maps_with_a_folded_edge():
+        if not m.is_connected():
+            continue
+        check(m)
+        tested += 1
+        # and once more with a second edge folded
+        for h in list(m.half_edges()):
+            r = m.copy(mutable=True)
+            try:
+                r.fold_edge(h)
+            except ValueError:
+                continue
+            if r.is_connected():
+                check(r)
+                tested += 1
+    assert tested

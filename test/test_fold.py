@@ -192,3 +192,51 @@ def test_fold_requires_mutable():
             m.fold_corner(h)
         with pytest.raises(ValueError):
             m.fold_edge(h)
+
+
+def maps_with_a_folded_edge():
+    # folding one edge of each sample map gives maps in which the folding
+    # primitives meet a neighbour lying on a folded edge, where ep(x) is x and
+    # not x ^ 1
+    out = []
+    for m in sample_maps():
+        for h in m.half_edges():
+            r = m.copy(mutable=True)
+            r.fold_edge(h)
+            out.append(r)
+    return out
+
+
+def test_fold_corner_next_to_a_folded_edge():
+    from combisurf import OrientedMap
+
+    m = OrientedMap("(0,~0,3,~1,2)(1,~3)", "(0)(~0,2,~1,~3)(1,3)", mutable=True)
+    m.fold_corner(2)
+    m._check()
+
+    for m in maps_with_a_folded_edge():
+        for h in list(m.half_edges()):
+            r = m.copy(mutable=True)
+            try:
+                r.fold_corner(h)
+            except (ValueError, NotImplementedError):
+                continue
+            r._check()
+
+
+def test_fold_edge_next_to_a_folded_edge():
+    from combisurf import OrientedMap
+
+    m = OrientedMap("(0,~0,2)(1,~1)", "(0)(~0,2)(1)(~1)", mutable=True)
+    assert m.num_folded_edges() == 1
+    m.fold_edge(0)
+    m._check()
+
+    for m in maps_with_a_folded_edge():
+        for h in list(m.half_edges()):
+            r = m.copy(mutable=True)
+            try:
+                r.fold_edge(h)
+            except (ValueError, NotImplementedError):
+                continue
+            r._check()
