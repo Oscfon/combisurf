@@ -79,6 +79,72 @@ def test_forest_coforest():
                     assert sum(f in cc for f in root_faces) == 1
 
 
+def test_forest_coforest_roots():
+    # a tree never leaves its connected component. Left to itself the
+    # decomposition roots one tree per component; given roots that miss one it
+    # says so rather than leaving a vertex or a face out.
+    from combisurf import OrientedMap
+    from test_fold import maps_with_a_folded_edge
+
+    m = OrientedMap(fp="(0,1,3)(~0,~1,~3)(2,4,5)(~2,~4,~5)")
+    assert not m.is_connected()
+    assert len(m.connected_components()) == 2
+    assert m.num_vertices() == 2 and m.num_faces() == 4
+
+    forest, coforest, comp = m.forest_coforest_decomposition()
+    assert sum(1 for x in forest if x == -1) == 2, list(forest)
+    assert sum(1 for x in coforest if x == -1) == 2, list(coforest)
+    assert all(x >= -1 for x in forest), list(forest)
+    assert all(x >= -1 for x in coforest), list(coforest)
+
+    with pytest.raises(ValueError, match="root_vertices must contain a vertex"):
+        m.forest_coforest_decomposition((0,), (0, 2))
+    with pytest.raises(ValueError, match="root_faces must contain a face"):
+        m.forest_coforest_decomposition((0, 1), (0,))
+
+    # a single tree can not span a map that is not connected
+    with pytest.raises(ValueError, match="requires a connected map"):
+        m.tree_cotree_decomposition()
+
+    # the quad system, on the other hand, is the disjoint union of the quad
+    # systems of the components
+    q = m.quad_system()
+    assert len(q.connected_components()) == 2
+    assert set(q.face_profile()) == {4}
+
+    # an empty root list fails even on a connected map, whichever of the two
+    # it is, since the single component then holds no root
+    c = OrientedMap(vp="(0,1,2)(~0,~1,~2)")
+    assert c.is_connected()
+    with pytest.raises(ValueError, match="root_vertices must contain a vertex"):
+        c.forest_coforest_decomposition((), (0,))
+    with pytest.raises(ValueError, match="root_faces must contain a face"):
+        c.forest_coforest_decomposition((0,), ())
+    with pytest.raises(ValueError, match="root_vertices must contain a vertex"):
+        c.forest_coforest_decomposition((), ())
+
+    # on a connected map the automatic roots are the former defaults
+    assert c.forest_coforest_decomposition() == c.forest_coforest_decomposition((0,), (0,))
+
+    # in general one tree and one cotree per component, rooted at the
+    # smallest vertex resp. face index that the component contains
+    for mm in maps_with_a_folded_edge():
+        h2v = mm.half_edge_to_vertex()
+        h2f = mm.half_edge_to_face()
+        vmins, fmins = set(), set()
+        for cc in mm.connected_components():
+            hs = [h for e in cc for h in (2 * e, 2 * e + 1)
+                  if h < len(h2v) and h2v[h] != -1]
+            vmins.add(min(h2v[h] for h in hs))
+            fmins.add(min(h2f[h] for h in hs))
+
+        forest, coforest, comp = mm.forest_coforest_decomposition()
+        assert all(x >= -1 for x in forest), (mm, list(forest))
+        assert all(x >= -1 for x in coforest), (mm, list(coforest))
+        assert {v for v, x in enumerate(forest) if x == -1} == vmins, mm
+        assert {f for f, x in enumerate(coforest) if x == -1} == fmins, mm
+
+
 def test_forest_coforest_empty_map():
     # the empty map has one vertex, one face and no edge, so its decomposition
     # is the two roots and nothing else

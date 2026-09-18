@@ -1495,7 +1495,7 @@ class OrientedMap:
             # TODO: implement something less costly
             return [cc.genus() for cc in self.connected_components_submaps(relabel=True)]
 
-    def forest_coforest_decomposition(self, root_vertices=(0,), root_faces=(0,)):
+    def forest_coforest_decomposition(self, root_vertices=None, root_faces=None):
         r"""
         Return a triple ``(forest, coforest, complementary_edges)`` with the
         given roots.
@@ -1507,11 +1507,15 @@ class OrientedMap:
 
         INPUT:
 
-        - ``root_vertices`` -- (default: ``(0,)``) the vertices the trees of
-          the forest are rooted at
+        - ``root_vertices`` -- (default: ``None``) the vertices the trees of
+          the forest are rooted at. A tree never leaves its connected
+          component, so each component must contain one of them and a
+          ``ValueError`` is raised otherwise. When ``None`` the smallest
+          vertex index of each connected component is taken as its root, which
+          gives one tree per component.
 
-        - ``root_faces`` -- (default: ``(0,)``) the faces the trees of the
-          coforest are rooted at
+        - ``root_faces`` -- (default: ``None``) the faces the trees of the
+          coforest are rooted at, with the same convention
 
         OUTPUT: a triple ``(forest, coforest, complementary_edges)`` of arrays
         of integers, in the format of :meth:`tree_cotree_decomposition`
@@ -1529,6 +1533,39 @@ class OrientedMap:
 
             sage: OrientedMap().forest_coforest_decomposition()
             (array('i', [-1]), array('i', [-1]), array('i'))
+
+        Left to itself on a map that is not connected, it roots one tree per
+        component::
+
+            sage: m = OrientedMap(fp="(0,1,3)(~0,~1,~3)(2,4,5)(~2,~4,~5)")
+            sage: m.is_connected()
+            False
+            sage: m.connected_components()
+            [[0, 1, 3], [2, 4, 5]]
+            sage: forest, coforest, comp_edges = m.forest_coforest_decomposition()
+            sage: forest
+            array('i', [-1, -1])
+            sage: coforest
+            array('i', [-1, 1, -1, 5])
+
+        the root of each tree being the smallest index it contains::
+
+            sage: [v for v, x in enumerate(forest) if x == -1]
+            [0, 1]
+            sage: [f for f, x in enumerate(coforest) if x == -1]
+            [0, 2]
+
+        Given roots that miss a component, it says so rather than leaving a
+        vertex or a face out::
+
+            sage: m.forest_coforest_decomposition((0,), (0, 2))
+            Traceback (most recent call last):
+            ...
+            ValueError: root_vertices must contain a vertex of each connected component
+            sage: m.forest_coforest_decomposition((0, 1), (0,))
+            Traceback (most recent call last):
+            ...
+            ValueError: root_faces must contain a face of each connected component
         """
         h2v = self.half_edge_to_vertex()
         verts = self.vertices()
@@ -1540,47 +1577,82 @@ class OrientedMap:
 
         vp = self._vp
         forest = array('i', [-2] * nv)
-        for v in root_vertices:
-            forest[v] = -1
         coforest = array('i', [-2] * nf)
-        for f in root_faces:
-            coforest[f] = -1
         used = array('i', [0] * (len(self._vp) // 2))
 
-        # build the forest
-        todo = list(root_vertices)
-        while todo:
-            h = todo.pop()
-            for hh in verts[h]:
-                if used[hh // 2]:
-                    continue
-                # a folded edge is a loop: ep(hh) is hh, whose vertex is the
-                # one we come from, so it never extends the forest
-                if vp[hh ^ 1] == -1:
-                    continue
-                hh = hh ^ 1
-                v = h2v[hh]
-                if forest[v] == -2:
-                    forest[v] = hh
-                    used[hh // 2] = 1
-                    todo.append(v)
+        # build the forest. Without roots every vertex is a candidate and the
+        # ones no tree has reached start a new one, which gives exactly one
+        # tree per connected component.
+        if root_vertices is None:
+            todo = []
+        else:
+            for v in root_vertices:
+                forest[v] = -1
+            todo = list(root_vertices)
+        v0 = 0
+        while True:
+            while todo:
+                h = todo.pop()
+                for hh in verts[h]:
+                    if used[hh // 2]:
+                        continue
+                    # a folded edge is a loop: ep(hh) is hh, whose vertex is
+                    # the one we come from, so it never extends the forest
+                    if vp[hh ^ 1] == -1:
+                        continue
+                    hh = hh ^ 1
+                    v = h2v[hh]
+                    if forest[v] == -2:
+                        forest[v] = hh
+                        used[hh // 2] = 1
+                        todo.append(v)
+            if root_vertices is not None:
+                break
+            while v0 < nv and forest[v0] != -2:
+                v0 += 1
+            if v0 == nv:
+                break
+            forest[v0] = -1
+            todo.append(v0)
 
-        # build the coforest
-        todo = list(root_faces)
-        while todo:
-            h = todo.pop()
-            for hh in faces[h]:
-                if used[hh // 2]:
-                    continue
-                # likewise a folded edge has the same face on both sides
-                if vp[hh ^ 1] == -1:
-                    continue
-                hh = hh ^ 1
-                f = h2f[hh]
-                if coforest[f] == -2:
-                    coforest[f] = hh
-                    used[hh // 2] = 1
-                    todo.append(f)
+        # build the coforest, the same way on the dual
+        if root_faces is None:
+            todo = []
+        else:
+            for f in root_faces:
+                coforest[f] = -1
+            todo = list(root_faces)
+        f0 = 0
+        while True:
+            while todo:
+                h = todo.pop()
+                for hh in faces[h]:
+                    if used[hh // 2]:
+                        continue
+                    # likewise a folded edge has the same face on both sides
+                    if vp[hh ^ 1] == -1:
+                        continue
+                    hh = hh ^ 1
+                    f = h2f[hh]
+                    if coforest[f] == -2:
+                        coforest[f] = hh
+                        used[hh // 2] = 1
+                        todo.append(f)
+            if root_faces is not None:
+                break
+            while f0 < nf and coforest[f0] != -2:
+                f0 += 1
+            if f0 == nf:
+                break
+            coforest[f0] = -1
+            todo.append(f0)
+
+        # a vertex left at -2 was reached by no tree, that is its component
+        # holds no root vertex; likewise for the faces
+        if -2 in forest:
+            raise ValueError("root_vertices must contain a vertex of each connected component")
+        if -2 in coforest:
+            raise ValueError("root_faces must contain a face of each connected component")
 
         return (forest, coforest, array('i', [e for e in self.edge_indices() if not used[e]]))
 
@@ -1628,7 +1700,24 @@ class OrientedMap:
             sage: cotree_edges = [h // 2 for h in cotree if h != -1]
             sage: cotree_edges
             [4, 2]
+
+        A single tree can not span a map that is not connected::
+
+            sage: m = OrientedMap(fp="(0,1,3)(~0,~1,~3)(2,4,5)(~2,~4,~5)")
+            sage: m.tree_cotree_decomposition()
+            Traceback (most recent call last):
+            ...
+            ValueError: a tree cotree decomposition requires a connected map
+            sage: m.forest_coforest_decomposition()[0]
+            array('i', [-1, -1])
+
+        .. SEEALSO::
+
+            :meth:`forest_coforest_decomposition`
         """
+        if not self.is_connected():
+            raise ValueError("a tree cotree decomposition requires a connected map")
+
         return self.forest_coforest_decomposition((root_vertex,), (root_face,))
 
     def radial_map(self, mapping=False, mutable=False):
