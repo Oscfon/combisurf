@@ -679,8 +679,8 @@ def perm_is_one(array.array p, int n=-1):
 
 def perm_dense_cycles(array.array p, int n=-1):
     r"""
-    Return an array labelling each point of ``p`` by the index of the cycle it
-    belongs to.
+    Return an array of length ``n`` labelling each of the first ``n`` points of
+    ``p`` by the index of the cycle it belongs to.
 
     The cycles are numbered by consecutive integers starting from zero,
     following the order in which they are met while scanning the points
@@ -692,7 +692,9 @@ def perm_dense_cycles(array.array p, int n=-1):
     - ``p`` -- a permutation
 
     - ``n`` -- (default: ``-1``) only use the first ``n`` points of ``p``; if
-      ``-1`` use them all
+      ``-1`` use them all. It must lie between ``0`` and ``len(p)``, and ``p``
+      must map ``[0, n)`` to itself, since a cycle leaving that range has no
+      label to be given; a ``ValueError`` is raised otherwise.
 
     EXAMPLES::
 
@@ -775,15 +777,21 @@ def perm_dense_cycles(array.array p, int n=-1):
 
 def perm_dense_cycle_positions(array.array p, int n=-1):
     r"""
-    Return an integral array of the same length as the permutation ``p`` whose
-    element at index ``i`` is the position of ``i`` in its cycle.
+    Return an integral array of length ``n`` whose element at index ``i`` is the
+    position of ``i`` in its cycle.
+
+    A cycle is read from the smallest point it contains, which is the one at
+    position zero, in the order given by ``p``. Inactive points, encoded by
+    ``-1`` in ``p``, get the value ``-1``.
 
     INPUT:
 
     - ``p`` -- a permutation
 
     - ``n`` -- (default: ``-1``) only use the first ``n`` points of ``p``; if
-      ``-1`` use them all
+      ``-1`` use them all. It must lie between ``0`` and ``len(p)``, and ``p``
+      must map ``[0, n)`` to itself, since the position of a point outside that
+      range is not recorded; a ``ValueError`` is raised otherwise.
 
     EXAMPLES::
 

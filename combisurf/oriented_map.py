@@ -1039,10 +1039,18 @@ class OrientedMap:
 
     def half_edge_to_vertex(self):
         r"""
-        Return an array whose element at index ``h`` is the vertex index
+        Return an array whose element at index ``h`` is the index of the vertex
         incident to the half-edge ``h``.
 
-        Inactive half-edges get the value ``-1``.
+        The indices are the ones of :meth:`vertices`: the entry at ``h`` is the
+        ``i`` for which ``h`` belongs to ``self.vertices()[i]``. Inactive
+        half-edges get the value ``-1``, and the array has one entry per
+        half-edge, so it is empty on a map without edges even though such a map
+        still has one vertex.
+
+        .. SEEALSO::
+
+            :meth:`vertices`, :meth:`half_edge_to_face`
 
         EXAMPLES::
 
@@ -1128,10 +1136,18 @@ class OrientedMap:
 
     def half_edge_to_face(self):
         r"""
-        Return an array whose element at index ``h`` is the face index
+        Return an array whose element at index ``h`` is the index of the face
         incident to the half-edge ``h``.
 
-        Inactive half-edges get the value ``-1``.
+        The indices are the ones of :meth:`faces`: the entry at ``h`` is the
+        ``i`` for which ``h`` belongs to ``self.faces()[i]``. Inactive
+        half-edges get the value ``-1``, and the array has one entry per
+        half-edge, so it is empty on a map without edges even though such a map
+        still has one face.
+
+        .. SEEALSO::
+
+            :meth:`faces`, :meth:`half_edge_to_vertex`
 
         EXAMPLES::
 
@@ -1338,7 +1354,7 @@ class OrientedMap:
 
     def submap(self, edges, relabel=False, mutable=False, check=True):
         r"""
-        Return the submap of this constellation induced on ``edges``.
+        Return the submap of this map induced on ``edges``.
 
         EXAMPLES::
 
@@ -1743,7 +1759,7 @@ class OrientedMap:
         obtained by adding a vertex in the center of each face, joining this
         added vertex to every corner in the face and removing the original
         edges. The vertices of the radial map are in bijection with the union
-        of vertices and faces of the original map. It as as many quadrilateral
+        of vertices and faces of the original map. It has as many quadrilateral
         faces as edges in the original map.
 
         The convention used for labelling is that the half-edge of the radial
@@ -1822,10 +1838,10 @@ class OrientedMap:
             sage: OrientedMap("(0)").radial_map()
             Traceback (most recent call last):
             ...
-            NotImplementedError
+            NotImplementedError: radial_map is not implemented on a map with a folded edge
         """
         if self.has_folded_edge():
-            raise NotImplementedError
+            raise NotImplementedError("radial_map is not implemented on a map with a folded edge")
         n = len(self._vp)
         rvp = array('i', [-1] * (2 * n))
         rfp = array('i', [-1] * (2 * n))
@@ -1885,7 +1901,11 @@ class OrientedMap:
         - ``mutable`` -- boolean (default: ``False``); whether the result is
           mutable
 
-        - ``check`` -- boolean (default: ``True``); whether to check the input
+        - ``check`` -- boolean (default: ``True``); whether to check that the
+          half-edges of ``forest`` and ``coforest`` are ones of this map, and
+          whether to check the map built when ``relabel`` is set. Listing the
+          same edge twice is reported whatever its value, being caught by the
+          bookkeeping rather than by a check.
 
         EXAMPLES::
 
@@ -1970,7 +1990,7 @@ class OrientedMap:
         whole forest of links at the end, so that the method is linear.
         """
         if self.has_folded_edge():
-            raise NotImplementedError
+            raise NotImplementedError("quad_system is not implemented on a map with a folded edge")
 
         if forest is None and coforest is None:
             forest, coforest, _ = self.forest_coforest_decomposition()
@@ -2182,11 +2202,21 @@ class OrientedMap:
         identified with ``ep(h)`` and the edge becomes a folded edge. This is
         the one case in which the edge of ``h`` survives the fold.
 
+        Neither the edge of ``h`` nor that of ``next_in_face(h)`` may be
+        folded on entry: a ``NotImplementedError`` is raised when one of them
+        is. The edge of ``h`` may well become folded by the fold itself,
+        through the monogon case above.
+
         INPUT:
 
         - ``h`` -- a half-edge, the one whose edge is folded away
 
-        - ``check`` -- (default: ``2``) the level of checks to perform
+        - ``check`` -- integer (default: ``2``); the level of checks to
+          perform. Level ``1`` checks that the map is mutable, that ``h`` is
+          one of its half-edges and that no folded edge is involved; level
+          ``0`` performs none of that and assumes the caller has done it. No
+          check is specific to level ``2`` here, which elsewhere in this class
+          guards the expensive ones, as in :meth:`genus` and :meth:`relabel`.
 
         EXAMPLES::
 
@@ -2241,7 +2271,8 @@ class OrientedMap:
         b = fp[a]
         b1 = b ^ 1
         if check >= 1 and (vp[a1] == -1 or vp[b1] == -1):
-            raise NotImplementedError
+            raise NotImplementedError("fold_corner is not implemented when the edge of h "
+                                      "or that of next_in_face(h) is folded")
         if b == a:
             # the face of a is a monogon and the rule identifies a with ep(a),
             # gluing the edge to itself rather than removing it
@@ -2305,7 +2336,12 @@ class OrientedMap:
 
         - ``h`` -- a half-edge, whose position in its face disappears
 
-        - ``check`` -- (default: ``2``) the level of checks to perform
+        - ``check`` -- integer (default: ``2``); the level of checks to
+          perform. Level ``1`` checks that the map is mutable, that ``h`` is
+          one of its half-edges and that its edge is not already folded; level
+          ``0`` performs none of that and assumes the caller has done it. No
+          check is specific to level ``2`` here, which elsewhere in this class
+          guards the expensive ones, as in :meth:`genus` and :meth:`relabel`.
 
         EXAMPLES::
 
