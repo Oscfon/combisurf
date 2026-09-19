@@ -52,6 +52,92 @@ def sample_maps():
     ]
 
 
+
+def ep(m, h):
+    r"""
+    Return the image of ``h`` under the edge permutation of ``m``.
+
+    This is ``h ^ 1``, except on a folded edge where it is ``h`` itself.
+    """
+    vp = m.vertex_permutation(copy=False)
+    return h if vp[h ^ 1] == -1 else h ^ 1
+
+
+def check_fold_corner_counts(m, h, r):
+    r"""
+    Check the four counts of ``r``, the result of ``m.fold_corner(h)``.
+
+    What happens is decided by the two ends the fold merges, the head of
+    ``fp[h]`` and the tail of ``h``. Note that the head of a half-edge is the
+    tail of its image under ``ep``, which is not ``^ 1`` on a folded edge.
+    """
+    fp = m.face_permutation(copy=False)
+    h2v = m.half_edge_to_vertex()
+    de = r.num_edges() - m.num_edges()
+    dv = r.num_vertices() - m.num_vertices()
+    df = r.num_faces() - m.num_faces()
+    dfolded = r.num_folded_edges() - m.num_folded_edges()
+
+    if fp[h] == h:
+        # a monogon glues the edge to itself, so it survives as a folded edge
+        # and its face closes up
+        assert (de, dfolded) == (0, 1), (m, h)
+        assert (dv, df) == (0, -1), (m, h)
+        return
+
+    assert (de, dfolded) == (-1, 0), (m, h)
+
+    if fp[h] == ep(m, h):
+        # a leaf half-edge: the edge is pruned and its head, a vertex of
+        # degree one, goes with it
+        assert (dv, df) == (-1, 0), (m, h)
+    elif h2v[h] != h2v[ep(m, fp[h])]:
+        # two distinct vertices, which merge
+        assert (dv, df) == (-1, 0), (m, h)
+    elif fp[fp[h]] == h:
+        # the same vertex, and the face of h is the bigon (h, fp[h]), which
+        # closes up
+        assert (dv, df) == (0, -1), (m, h)
+    else:
+        # the same vertex twice over: it is pinched and splits in two. As for
+        # contract_edge and delete_edge the degenerate case is performed
+        # rather than refused, so the euler characteristic jumps by two
+        assert (dv, df) == (1, 0), (m, h)
+        assert r.euler_characteristic() == m.euler_characteristic() + 2, (m, h)
+
+
+def check_fold_half_edge_counts(m, h, r):
+    r"""
+    Check the four counts of ``r``, the result of ``m.fold_half_edge(h)``.
+    """
+    fp = m.face_permutation(copy=False)
+    h2v = m.half_edge_to_vertex()
+    de = r.num_edges() - m.num_edges()
+    dv = r.num_vertices() - m.num_vertices()
+    df = r.num_faces() - m.num_faces()
+    dfolded = r.num_folded_edges() - m.num_folded_edges()
+
+    # the edge survives, folded onto itself, keeping its even half-edge
+    assert (de, dfolded) == (0, 1), (m, h)
+    assert 2 * (h // 2) in list(r.folded_half_edges()), (m, h)
+
+    if h2v[h] != h2v[ep(m, h)]:
+        # the two ends of the edge are distinct and merge
+        assert (dv, df) == (-1, 0), (m, h)
+    elif fp[h] == h:
+        # a loop already bounding a monogon: that face closes up
+        assert (dv, df) == (0, -1), (m, h)
+    else:
+        # a loop otherwise: its vertex is pinched and splits in two, and the
+        # degenerate case is performed rather than refused
+        assert (dv, df) == (1, 0), (m, h)
+        assert r.euler_characteristic() == m.euler_characteristic() + 2, (m, h)
+
+    # chi = F - E + (V + folded)
+    assert (r.euler_characteristic() - m.euler_characteristic()
+            == df - de + dv + dfolded), (m, h)
+
+
 def test_fold_corner_twice_is_contract_edge():
     # on a radial map, folding the two corners of the quadrilateral of an edge
     # along the odd half-edge contracts that edge
@@ -108,8 +194,6 @@ def test_fold_corner_twice_is_delete_edge():
 
 def test_fold_corner_effect():
     for m in sample_maps():
-        fp = m.face_permutation(copy=False)
-        h2v = m.half_edge_to_vertex()
         for h in m.half_edges():
             r = m.copy(mutable=True)
             try:
@@ -117,72 +201,18 @@ def test_fold_corner_effect():
             except ValueError:
                 continue
             r._check()
-            dv = r.num_vertices() - m.num_vertices()
-            df = r.num_faces() - m.num_faces()
-            if fp[h] == h:
-                # a monogon glues the edge to itself, so it survives
-                assert r.num_edges() == m.num_edges(), (m, h)
-                assert r.num_folded_edges() == m.num_folded_edges() + 1, (m, h)
-                # the monogon face closes up and the vertex does not move
-                assert (dv, df) == (0, -1), (m, h)
-            else:
-                assert r.num_edges() == m.num_edges() - 1, (m, h)
-                assert r.num_folded_edges() == m.num_folded_edges(), (m, h)
-
-                # the fold merges the head of fp[h] with the tail of h, so
-                # what happens to the counts is decided by whether those are
-                # the same vertex
-                if fp[h] == h ^ 1:
-                    # a leaf half-edge: the edge is pruned and its head, a
-                    # vertex of degree one, goes with it. See
-                    # test_fold_corner_prunes_a_leaf, which is where this
-                    # happens, sample_maps() having no leaf.
-                    assert (dv, df) == (-1, 0), (m, h)
-                elif h2v[h] != h2v[fp[h] ^ 1]:
-                    # two distinct vertices, which merge
-                    assert (dv, df) == (-1, 0), (m, h)
-                elif fp[fp[h]] == h:
-                    # the same vertex, and the face of h is the bigon
-                    # (h, fp[h]), which closes up
-                    assert (dv, df) == (0, -1), (m, h)
-                else:
-                    # the same vertex twice over: it is pinched and splits in
-                    # two. As for contract_edge and delete_edge the degenerate
-                    # case is performed rather than refused, so here the euler
-                    # characteristic jumps by two
-                    assert (dv, df) == (1, 0), (m, h)
-                    assert r.euler_characteristic() == m.euler_characteristic() + 2, (m, h)
+            check_fold_corner_counts(m, h, r)
 
 
 def test_fold_half_edge_effect():
     for m in sample_maps():
-        h2v = m.half_edge_to_vertex()
+        assert m.num_folded_edges() == 0, m
         for h in m.half_edges():
             r = m.copy(mutable=True)
             r.fold_half_edge(h)
             r._check()
-
-            # the edge becomes folded, keeping its even half-edge
             assert r.num_folded_edges() == 1, (m, h)
-            assert 2 * (h // 2) in list(r.folded_half_edges()), (m, h)
-            assert r.num_edges() == m.num_edges(), (m, h)
-
-            loop = h2v[h] == h2v[h ^ 1]
-            dv = r.num_vertices() - m.num_vertices()
-            df = r.num_faces() - m.num_faces()
-
-            # chi = F - E + (V + folded), and the edge count does not move
-            assert (r.euler_characteristic() - m.euler_characteristic()
-                    == dv + df + 1), (m, h)
-
-            if not loop:
-                # the two ends of the edge merge and nothing else moves
-                assert dv == -1 and df == 0, (m, h)
-                assert r.euler_characteristic() == m.euler_characteristic(), (m, h)
-            else:
-                # folding a loop pinches its vertex; as for contract_edge and
-                # delete_edge the degenerate case is performed, not refused
-                assert dv in (0, 1), (m, h)
+            check_fold_half_edge_counts(m, h, r)
 
 
 def test_fold_corner_prunes_a_leaf():
@@ -297,11 +327,15 @@ def maps_with_a_folded_edge():
 def test_fold_corner_next_to_a_folded_edge():
     from combisurf import OrientedMap
 
-    m = OrientedMap("(0,~0,3,~1,2)(1,~3)", "(0)(~0,2,~1,~3)(1,3)", mutable=True)
-    m.fold_corner(2)
-    m._check()
+    m = OrientedMap("(0,~0,3,~1,2)(1,~3)", "(0)(~0,2,~1,~3)(1,3)")
+    r = m.copy(mutable=True)
+    r.fold_corner(2)
+    r._check()
+    check_fold_corner_counts(m, 2, r)
 
+    tested = 0
     for m in maps_with_a_folded_edge():
+        assert m.has_folded_edge(), m
         for h in list(m.half_edges()):
             r = m.copy(mutable=True)
             try:
@@ -309,17 +343,24 @@ def test_fold_corner_next_to_a_folded_edge():
             except (ValueError, NotImplementedError):
                 continue
             r._check()
+            check_fold_corner_counts(m, h, r)
+            tested += 1
+    assert tested > 500, tested
 
 
 def test_fold_half_edge_next_to_a_folded_edge():
     from combisurf import OrientedMap
 
-    m = OrientedMap("(0,~0,2)(1,~1)", "(0)(~0,2)(1)(~1)", mutable=True)
+    m = OrientedMap("(0,~0,2)(1,~1)", "(0)(~0,2)(1)(~1)")
     assert m.num_folded_edges() == 1
-    m.fold_half_edge(0)
-    m._check()
+    r = m.copy(mutable=True)
+    r.fold_half_edge(0)
+    r._check()
+    check_fold_half_edge_counts(m, 0, r)
 
+    tested = 0
     for m in maps_with_a_folded_edge():
+        assert m.has_folded_edge(), m
         for h in list(m.half_edges()):
             r = m.copy(mutable=True)
             try:
@@ -327,3 +368,6 @@ def test_fold_half_edge_next_to_a_folded_edge():
             except (ValueError, NotImplementedError):
                 continue
             r._check()
+            check_fold_half_edge_counts(m, h, r)
+            tested += 1
+    assert tested > 500, tested
