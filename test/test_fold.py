@@ -109,6 +109,7 @@ def test_fold_corner_twice_is_delete_edge():
 def test_fold_corner_effect():
     for m in sample_maps():
         fp = m.face_permutation(copy=False)
+        h2v = m.half_edge_to_vertex()
         for h in m.half_edges():
             r = m.copy(mutable=True)
             try:
@@ -116,13 +117,41 @@ def test_fold_corner_effect():
             except ValueError:
                 continue
             r._check()
+            dv = r.num_vertices() - m.num_vertices()
+            df = r.num_faces() - m.num_faces()
             if fp[h] == h:
                 # a monogon glues the edge to itself, so it survives
                 assert r.num_edges() == m.num_edges(), (m, h)
                 assert r.num_folded_edges() == m.num_folded_edges() + 1, (m, h)
+                # the monogon face closes up and the vertex does not move
+                assert (dv, df) == (0, -1), (m, h)
             else:
                 assert r.num_edges() == m.num_edges() - 1, (m, h)
                 assert r.num_folded_edges() == m.num_folded_edges(), (m, h)
+
+                # the fold merges the head of fp[h] with the tail of h, so
+                # what happens to the counts is decided by whether those are
+                # the same vertex
+                if fp[h] == h ^ 1:
+                    # a leaf half-edge: the edge is pruned and its head, a
+                    # vertex of degree one, goes with it. See
+                    # test_fold_corner_prunes_a_leaf, which is where this
+                    # happens, sample_maps() having no leaf.
+                    assert (dv, df) == (-1, 0), (m, h)
+                elif h2v[h] != h2v[fp[h] ^ 1]:
+                    # two distinct vertices, which merge
+                    assert (dv, df) == (-1, 0), (m, h)
+                elif fp[fp[h]] == h:
+                    # the same vertex, and the face of h is the bigon
+                    # (h, fp[h]), which closes up
+                    assert (dv, df) == (0, -1), (m, h)
+                else:
+                    # the same vertex twice over: it is pinched and splits in
+                    # two. As for contract_edge and delete_edge the degenerate
+                    # case is performed rather than refused, so here the euler
+                    # characteristic jumps by two
+                    assert (dv, df) == (1, 0), (m, h)
+                    assert r.euler_characteristic() == m.euler_characteristic() + 2, (m, h)
 
 
 def test_fold_half_edge_effect():
