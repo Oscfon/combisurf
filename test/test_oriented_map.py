@@ -389,3 +389,110 @@ def test_relabel():
         m2 = m.copy(mutable=True)
         m2.relabel(perm_compose(p1, p2))
         assert m1  == m2
+
+
+def half_edge_to_cell_corpus():
+    # the small maps, plus maps with folded edges, with inactive half-edges,
+    # disconnected ones and the empty map
+    from combisurf import OrientedMap
+    from test_fold import sample_maps, maps_with_a_folded_edge
+
+    out = list(small_maps()) + sample_maps() + maps_with_a_folded_edge()
+    out += [
+        OrientedMap(),                                   # empty
+        OrientedMap(vp="(2,1,5)(~1,~2,~5)"),             # edge 0 inactive
+        OrientedMap(fp="(0,1,3)(~0,~1,~3)(2,4,5)(~2,~4,~5)"),   # disconnected
+        OrientedMap("(0,2,~2)"),                         # a folded edge
+    ]
+    return out
+
+
+def test_half_edge_to_vertex_and_face():
+    # the arrays are the inverse of vertices() and faces(): entry h is the
+    # index of the cell containing h. This alignment is what
+    # forest_coforest_decomposition relies on to go from a half-edge to the
+    # cell it belongs to.
+    for m in half_edge_to_cell_corpus():
+        for cells, h2c in ((m.vertices(), m.half_edge_to_vertex()),
+                           (m.faces(), m.half_edge_to_face())):
+            assert len(h2c) == len(m.vertex_permutation(copy=False)), m
+
+            seen = set()
+            for i, c in enumerate(cells):
+                for h in c:
+                    assert h2c[h] == i, (m, h, i, list(h2c))
+                    seen.add(h)
+
+            # exactly the active half-edges are labelled, and with -1 elsewhere
+            assert seen == set(m.half_edges()), m
+            for h in range(len(h2c)):
+                if h in seen:
+                    assert h2c[h] != -1, (m, h)
+                else:
+                    assert h2c[h] == -1, (m, h)
+
+
+def test_half_edge_to_cell_labels_are_consecutive():
+    # the labels run 0, 1, ..., and there are as many as cells
+    for m in half_edge_to_cell_corpus():
+        for n, h2c in ((m.num_vertices(), m.half_edge_to_vertex()),
+                       (m.num_faces(), m.half_edge_to_face())):
+            labels = sorted({x for x in h2c if x != -1})
+            if not list(m.half_edges()):
+                # no half-edge to label, though the map still has one cell
+                assert labels == [], m
+                assert n == 1, m
+            else:
+                assert labels == list(range(n)), (m, labels, n)
+
+
+def test_half_edge_to_cell_follows_the_permutations():
+    # a half-edge and its image under vp are on the same vertex, and likewise
+    # for fp and the faces
+    for m in half_edge_to_cell_corpus():
+        vp = m.vertex_permutation(copy=False)
+        fp = m.face_permutation(copy=False)
+        h2v = m.half_edge_to_vertex()
+        h2f = m.half_edge_to_face()
+        for h in m.half_edges():
+            assert h2v[vp[h]] == h2v[h], (m, h)
+            assert h2f[fp[h]] == h2f[h], (m, h)
+
+
+def test_half_edge_to_cell_on_the_empty_map():
+    # the empty map has one vertex and one face but no half-edge, so the two
+    # arrays are empty rather than of length one
+    from combisurf import OrientedMap
+
+    z = OrientedMap()
+    assert z.num_vertices() == 1 and z.num_faces() == 1
+    assert z.vertices() == [[]] and z.faces() == [[]]
+    assert list(z.half_edge_to_vertex()) == []
+    assert list(z.half_edge_to_face()) == []
+
+
+def test_half_edge_to_cell_with_inactive_edge_zero():
+    # the labels come from the active cycles only, so index 0 is a real cell
+    # even when half-edge 0 is inactive
+    from combisurf import OrientedMap
+
+    m = OrientedMap(vp="(2,1,5)(~1,~2,~5)")
+    assert list(m.half_edge_to_vertex()) == [-1, -1, 0, 1, 0, 1, -1, -1, -1, -1, 0, 1]
+    assert list(m.half_edge_to_face()) == [-1, -1, 0, 1, 1, 2, -1, -1, -1, -1, 2, 0]
+
+
+def test_half_edge_to_cell_with_a_folded_edge():
+    # only the even half-edge of a folded edge is active, so the odd one is
+    # labelled -1 while the even one belongs to a genuine cell
+    from combisurf import OrientedMap
+
+    m = OrientedMap("(0,2,~2)")
+    assert m.has_folded_edge()
+    vp = m.vertex_permutation(copy=False)
+    h2v = m.half_edge_to_vertex()
+    h2f = m.half_edge_to_face()
+    folded = [e for e in m.edge_indices() if vp[(2 * e) ^ 1] == -1]
+    assert folded
+    for e in folded:
+        assert h2v[2 * e] != -1 and h2f[2 * e] != -1, (m, e)
+        assert h2v[2 * e + 1] == -1 and h2f[2 * e + 1] == -1, (m, e)
