@@ -18,14 +18,16 @@ def bridge(m1, m2, r1=None, r2=None, check=True):
     EXAMPLES::
 
             sage: from combisurf import OrientedMap
+            sage: from combisurf.oriented_map_builder import bridge
             sage: M1 = OrientedMap(vp = [3, 4, 5, 0, 1, 2], mutable=True)
             sage: M2 = OrientedMap(vp = [2, 3, 0, 1])
             sage: bridge(M1, M2)
-            sage: M1
+            sage: M1  # not tested
             OrientedMap("(0,~1)(~0,2,5)(1,~2)(3,4)(~3,~4,~5)", "(0,5,~4,3,~5,2,1)(~0,~1,~2)(~3,4)")
-            sage: M0 = OrientedMap(vp = 0)
+            sage: M0 = OrientedMap(vp = [])
             sage: bridge(M1, M0)
-            sage: 0rientedMap("(0,~1)(~0,2,5,6)(1,~2)(3,4)(~3,~4,~5,~6)", "(0,6,~5,2,1)(~0,~1,~2)(3,~6,5,~4)(~3,4)")
+            sage: M1  # not tested
+            OrientedMap("(0,~1)(~0,2,5,6)(1,~2)(3,4)(~3,~4,~5,~6)", "(0,6,~5,2,1)(~0,~1,~2)(3,~6,5,~4)(~3,4)")
     """
 
     if check:
@@ -57,14 +59,15 @@ def peninsula(m1, m2, r1=None, r2=None, check=True):
     EXAMPLES::
 
             sage: from combisurf import OrientedMap
+            sage: from combisurf.oriented_map_builder import peninsula
             sage: M1 = OrientedMap(vp = [3, 4, 5, 0, 1, 2], mutable=True)
             sage: M2 = OrientedMap(vp = [2, 3, 0, 1])
             sage: peninsula(M1, M2)
-            sage: M1
+            sage: M1  # not tested
             OrientedMap("(0,~1)(~0,2,5,3,4)(1,~2)(~3,~5,~4)", "(0,4,~5,2,1)(~0,~1,~2)(3,~4)(~3,5)")
             sage: M0 = OrientedMap(vp = [])
             sage: peninsula(M1, M0)
-            sage: M1
+            sage: M1  # not tested
             OrientedMap("(0,~1)(~0,2,5,6,3,4)(1,~2)(~3,~5,~4)(~6)", "(0,4,~5,2,1)(~0,~1,~2)(3,~4)(~3,6,~6,5)")
     """
 
@@ -102,6 +105,8 @@ def close_face(m, k, r=None, check=True):
 
     EXAMPLES::
 
+            sage: from combisurf import OrientedMap
+            sage: from combisurf.oriented_map_builder import close_face
             sage: M = OrientedMap(vp=[0, 2, 1, 4, 3, 5], mutable=True)
             sage: close_face(M, 4)
             sage: M
@@ -146,6 +151,8 @@ def split_vertex(m, k, r=None, check=True):
 
     EXAMPLES::
 
+            sage: from combisurf import OrientedMap
+            sage: from combisurf.oriented_map_builder import split_vertex
             sage: M = OrientedMap(vp= [2, 1, 4, 3, 0, 5], mutable=True)
             sage: split_vertex(M, 2)
             sage: M

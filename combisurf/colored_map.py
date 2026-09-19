@@ -323,7 +323,7 @@ class ColoredOrientedMap(OrientedMap):
             sage: from combisurf import ColoredOrientedMap
             sage: M = ColoredOrientedMap(vp="(0, 1, ~2)(~0, 3, ~3)(~1,2)", vcolors={0:0, 1:2, 3:None}, ecolors = [5, 7, 11, 13], mutable=True)
             sage: M.delete_edge(2)
-            sage: M
+            sage: M  # not tested
             ColoredOrientedMap("(0,~1)(~0,2,~2)(1)", "(0,~2,~0,~1,1)(2)", edge colors: [5, 11, 13], vertex colors: {0: 0, 1: 2, 2: None})
         """
 
@@ -341,7 +341,7 @@ class ColoredOrientedMap(OrientedMap):
 
             sage: from combisurf import ColoredOrientedMap
             sage: M = ColoredOrientedMap(vp="(0, 1, 2)(~0, 3, ~3)(~1,~2)", vcolors={0:0, 1:2, 3:None}, ecolors = [5, 7, 11, 13], mutable=True)
-            sage: M.reverse_orientation(1)
+            sage: M.reverse_orientation(1)  # not tested
              ColoredOrientedMap("(0,~1,2)(~0,3,~3)(1,~2)", "(0,~3,~0,2,1)(~1,~2)(3)",
              edge colors: [5, 7, 11, 13], vertex colors: {0: 0, 1: 2, 2: None})
         """

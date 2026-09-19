@@ -41,7 +41,7 @@ def word_check(w):
 
         sage: word_check(array('i', []))
         True
-        sage: word_check(array('u', []))
+        sage: word_check(array('d', []))
         False
         sage: word_check(array('i', [0]))
         True

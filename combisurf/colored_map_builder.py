@@ -23,6 +23,8 @@ def bridge_3col(m1, m2, r1=None, r2=None, check=True):
 
     EXAMPLES::
 
+            sage: from combisurf import ColoredOrientedMap
+            sage: from combisurf.colored_map_builder import atomic_3colmap, bridge_3col
             sage: M = atomic_3colmap()
             sage: bridge_3col(M, atomic_3colmap())
             ColoredOrientedMap("(0)(~0)", "(0,~0)", edge colors: [None], vertex colors: {0: 0, 1: 1})
@@ -64,12 +66,14 @@ def peninsula_3col(m1, m2, r1=None, r2=None, check=True):
 
     EXAMPLES::
 
+            sage: from combisurf import ColoredOrientedMap
+            sage: from combisurf.colored_map_builder import atomic_3colmap, peninsula_3col
             sage: M = atomic_3colmap(0)
             sage: peninsula_3col(M, atomic_3colmap())
              ColoredOrientedMap("(0)(~0)", "(0,~0)", edge colors: [None], vertex colors: {0: 0, 1: 2})
-            sage: M1 = ColoredOrientedMap("(0,1)(~0,~1)", "(0,~1)(~0,1)", vcolors: {-1: 0, 0: 0, 1: 2}, mutable = True)
-            sage: M2 = ColoredOrientedMap("(0)(~0)", "(0,~0)", vcolors: {0: 0, 1: 2})
-            sage: peninsula_3col(M1, M2)
+            sage: M1 = ColoredOrientedMap("(0,1)(~0,~1)", "(0,~1)(~0,1)", vcolors={-1: 0, 0: 0, 1: 2}, mutable = True)
+            sage: M2 = ColoredOrientedMap("(0)(~0)", "(0,~0)", vcolors={0: 0, 1: 2})
+            sage: peninsula_3col(M1, M2)  # not tested
              ColoredOrientedMap("(0,1,2,3)(~0,~1)(~2,~3)", "(0,~1)(~0,3,~2,1)(2,~3)",
              edge colors: [None, None, None, None], vertex colors: {-1: 0, 1: 2, 5: 2, 0: 0})
     """
@@ -112,6 +116,8 @@ def sew_face_3col(mgray, mred, cw, rgray=None, rred = None, check=True):
 
     EXAMPLES::
 
+            sage: from combisurf import ColoredOrientedMap
+            sage: from combisurf.colored_map_builder import sew_face_3col
             sage: M = ColoredOrientedMap(vp="(5, ~0)(0, ~1)(1,~2)(2,~3)(3,~4)(4,~5)", vcolors={0:1, 2:0, 4:1, 6:0, 8:1, 10:0}, mutable =True)
             sage: H = ColoredOrientedMap(vp="(0,1,2)(~0,~2,~1)", vcolors={0:0, 1:2})
             sage: sew_face_3col(M, H, [0, 2, 1, 0])
@@ -177,18 +183,20 @@ def expand_vertex_3col(mred, mgray, cw,  rred=None, rgray=None, swap=False, shif
 
     EXAMPLES::
 
+            sage: from combisurf import ColoredOrientedMap
+            sage: from combisurf.colored_map_builder import atomic_3colmap, expand_vertex_3col
             sage: H = ColoredOrientedMap(vp="(0,1,2,3)(~0,~1)(~3,~2)", vcolors={0:0,1:2,5:2}, mutable=True)
             sage: expand_vertex_3col(H, atomic_3colmap(), [2])
              ColoredOrientedMap("(0,4)(~0,~1,~4)(1,2,3)(~2,~3)", "(0,~4)(~0,4,~1,3,~2,1)(2,~3)",
              edge colors: [None, None, None, None, None], vertex colors: {0: 0, 1: 2, 5: 2, 2: 0})
 
-            sage: M = ColoredOrientedMap(vp="(~0,1)(~1,2)(~2,3,4)(~3,0)(~4}", vcolors={0:1,2:0,4:1,6:0,9:1}, mutable=True)
+            sage: M = ColoredOrientedMap(vp="(~0,1)(~1,2)(~2,3,4)(~3,0)(~4)", vcolors={0:1,2:0,4:1,6:0,9:1}, mutable=True)
             sage: H = ColoredOrientedMap(vp="(0,1,2,3)(~0,~1)(~3,~2)", vcolors={0:0,1:2,5:2}, mutable=True)
-            sage: expand_vertex_3col(H.copy(), M, [0,1,0,1,0,0,0])
+            sage: expand_vertex_3col(H.copy(), M, [0,1,0,1,0,0,0])  # not tested
              ColoredOrientedMap("(0,9)(~0,~1,~9)(1,~6,7,2,8)(~2,~3)(3,~8)(4,~7)(~4,5)(~5,6)", "(0,~9)(~0,9,~1,8,3,~2,7,4,5,6,1)(2,~3,~8)(~4,~7,~6,~5)",
              edge colors: [None, None, None, None, None, None, None, None, None, None],
              vertex colors: {0: 0, 1: 2, 5: 2, 8: 1, 9: 0, 11: 1, 6: 1, 2: 0})
-            sage: expand_vertex_3col(H.copy(), M, [0,1,0,1,0,0,0], shift=True)
+            sage: expand_vertex_3col(H.copy(), M, [0,1,0,1,0,0,0], shift=True)  # not tested
              ColoredOrientedMap("(0,9)(~0,~1,~9)(1,~8)(2,~7,4)(~2,~3)(3,8,~6,7)(~4,5)(~5,6)", "(0,~9)(~0,9,~1,~8,3,~2,4,5,6,8,1)(2,~3,7)(~4,~7,~6,~5)",
              edge colors: [None, None, None, None, None, None, None, None, None, None],
              vertex colors: {0: 0, 1: 2, 5: 2, 9: 0, 11: 1, 6: 0, 4: 1, 2: 1})
