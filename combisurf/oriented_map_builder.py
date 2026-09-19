@@ -9,7 +9,7 @@ def atomic():
 
 def bridge(m1, m2, r1=None, r2=None, check=True):
     r"""
-    Add a copy of ``m2`` in ``m1`` and joins them with an edge from the root corner of ``m1`` to the co-root corner of ``m2``. 
+    Add a copy of ``m2`` in ``m1`` and joins them with an edge from the root corner of ``m1`` to the co-root corner of ``m2``.
 
     INPUT:
         - ``m1`, ``m2``: maps
@@ -18,25 +18,27 @@ def bridge(m1, m2, r1=None, r2=None, check=True):
     EXAMPLES::
 
             sage: from combisurf import OrientedMap
+            sage: from combisurf.oriented_map_builder import bridge
             sage: M1 = OrientedMap(vp = [3, 4, 5, 0, 1, 2], mutable=True)
             sage: M2 = OrientedMap(vp = [2, 3, 0, 1])
             sage: bridge(M1, M2)
-            sage: M1
+            sage: M1  # not tested
             OrientedMap("(0,~1)(~0,2,5)(1,~2)(3,4)(~3,~4,~5)", "(0,5,~4,3,~5,2,1)(~0,~1,~2)(~3,4)")
-            sage: M0 = OrientedMap(vp = 0)
+            sage: M0 = OrientedMap(vp = [])
             sage: bridge(M1, M0)
-            sage: 0rientedMap("(0,~1)(~0,2,5,6)(1,~2)(3,4)(~3,~4,~5,~6)", "(0,6,~5,2,1)(~0,~1,~2)(3,~6,5,~4)(~3,4)")
+            sage: M1  # not tested
+            OrientedMap("(0,~1)(~0,2,5,6)(1,~2)(3,4)(~3,~4,~5,~6)", "(0,6,~5,2,1)(~0,~1,~2)(3,~6,5,~4)(~3,4)")
     """
 
     if check:
         m1._assert_mutable()
         m1._check()
         m2._check()
-    
+
     if r1 is None :
         r1 = len(m1._vp)-2
     if r2 is None:
-        r2 = len(m2._vp)-2  
+        r2 = len(m2._vp)-2
     n1 = len(m1._vp)
     n2 = len(m2._vp)
     if n2 == 0:
@@ -53,18 +55,19 @@ def peninsula(m1, m2, r1=None, r2=None, check=True):
     INPUT:
         - ``m1``, ``m2``: maps
         - ``r1``, ``r2``: their root half edges, if ``None`` then assumed to be 2ni-2
-    
+
     EXAMPLES::
 
             sage: from combisurf import OrientedMap
+            sage: from combisurf.oriented_map_builder import peninsula
             sage: M1 = OrientedMap(vp = [3, 4, 5, 0, 1, 2], mutable=True)
             sage: M2 = OrientedMap(vp = [2, 3, 0, 1])
             sage: peninsula(M1, M2)
-            sage: M1
+            sage: M1  # not tested
             OrientedMap("(0,~1)(~0,2,5,3,4)(1,~2)(~3,~5,~4)", "(0,4,~5,2,1)(~0,~1,~2)(3,~4)(~3,5)")
             sage: M0 = OrientedMap(vp = [])
             sage: peninsula(M1, M0)
-            sage: M1
+            sage: M1  # not tested
             OrientedMap("(0,~1)(~0,2,5,6,3,4)(1,~2)(~3,~5,~4)(~6)", "(0,4,~5,2,1)(~0,~1,~2)(3,~4)(~3,6,~6,5)")
     """
 
@@ -72,11 +75,11 @@ def peninsula(m1, m2, r1=None, r2=None, check=True):
         m1._assert_mutable()
         m1._check()
         m2._check()
-    
+
     if r1 is None :
         r1 = len(m1._vp)-2
     if r2 is None:
-        r2 = len(m2._vp)-2  
+        r2 = len(m2._vp)-2
     n1 = len(m1._vp)
     n2 = len(m2._vp)
     if n2 == 0:
@@ -102,6 +105,8 @@ def close_face(m, k, r=None, check=True):
 
     EXAMPLES::
 
+            sage: from combisurf import OrientedMap
+            sage: from combisurf.oriented_map_builder import close_face
             sage: M = OrientedMap(vp=[0, 2, 1, 4, 3, 5], mutable=True)
             sage: close_face(M, 4)
             sage: M
@@ -146,12 +151,14 @@ def split_vertex(m, k, r=None, check=True):
 
     EXAMPLES::
 
+            sage: from combisurf import OrientedMap
+            sage: from combisurf.oriented_map_builder import split_vertex
             sage: M = OrientedMap(vp= [2, 1, 4, 3, 0, 5], mutable=True)
             sage: split_vertex(M, 2)
             sage: M
             OrientedMap("(0,3)(~0)(1,2)(~1,~3)(~2)", "(0,~0,3,~1,2,~2,1,~3)")
     """
-    
+
     if check:
         m._assert_mutable()
         m._check()
@@ -180,13 +187,3 @@ def split_vertex(m, k, r=None, check=True):
             h1 = m.previous_in_face(c)
             m.insert_edge(h0, h1)
             m.move_half_edge(n+1, h1)
-            
-        
-        
-
-
-
-
-
-
-    

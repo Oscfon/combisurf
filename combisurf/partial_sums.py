@@ -5,7 +5,7 @@ We consider a vector v of fixed size n on which we allow two operations
 - updates of the form v[i] += x
 - computation of the partial sum sum(v[i:j])
 
-Taking a plain array for implenting the above leads to O(1) arithmetic cost
+Taking a plain array for implementing the above leads to O(1) arithmetic cost
 for updates and O(n) for partial sums. This direct approach is in
 :class:`PartialSumsNaive`. The :class:`PartialSumsBinarySplitting`
 implement a data structure that do both updates and partial sums in O(\log(n))

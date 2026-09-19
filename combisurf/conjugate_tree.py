@@ -689,7 +689,7 @@ class ConjugateTree:
         Add the word ``w`` in this conjugate tree.
 
         The output value is an integer. Depending on its sign it encodes
-        different informations.
+        different information.
 
         - a positive ``exponent`` if the word ``w`` is not already present
           and ``exponent`` is the exponent of ``w`` (which is ``1`` if and only

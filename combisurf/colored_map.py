@@ -30,8 +30,8 @@ from collections import defaultdict
 class ColoredOrientedMap(OrientedMap):
     r"""
     INPUT:
-        - ``ecolors`` -- ``None`` or a list or dictionnary of data so that ecolors[i] is the data associated to the edge (2i,2i+1).
-        - ``vcolors`` -- a dictionnary of data so that vcolors[h] is the data associated to the vertex incident to half edge h, and only one half edge incident to a given vertex is present. If the map is atomic (no edges), the color of the vertex can be specified in entry ``-1``.
+        - ``ecolors`` -- ``None`` or a list or dictionary of data so that ecolors[i] is the data associated to the edge (2i,2i+1).
+        - ``vcolors`` -- a dictionary of data so that vcolors[h] is the data associated to the vertex incident to half edge h, and only one half edge incident to a given vertex is present. If the map is atomic (no edges), the color of the vertex can be specified in entry ``-1``.
     """
     def __init__(self, vp=None, fp=None, vcolors={}, ecolors=None, mutable=False, check=True):
         OrientedMap.__init__(self, vp, fp, mutable, check)
@@ -47,7 +47,7 @@ class ColoredOrientedMap(OrientedMap):
             elif isinstance(ecolors, dict):
                 self._edge_colors = [ecolors.get(e) for e in range(len(self._vp)//2)]
             else:
-                raise TypeError("ecolors should be a list or dictionnary")
+                raise TypeError("ecolors should be a list or dictionary")
 
         self._vertex_colors = {}
         if len(self._vp) == 0:
@@ -116,7 +116,7 @@ class ColoredOrientedMap(OrientedMap):
             return self._vertex_colors[-1]
         return self._vertex_colors[self._v_id(h)]
 
-    
+
     def submap(self, edges, mutable=False, check=True):
         r"""
         Return the submap of this constellation induced on ``edges``.
@@ -124,10 +124,10 @@ class ColoredOrientedMap(OrientedMap):
 
         unlab_submap = OrientedMap.submap(self, edges, mutable=mutable, check=check)
         relab_submap = OrientedMap.submap(self, edges, relabel=True, mutable=mutable, check=check)
-        
+
         sub_edge_colors = [self.edge_color(e) for e in edges]
         sub_vert_colors = {(v[0] - 2*sum([e not in edges for e in range(v[0]//2)])): self.vertex_color(v[0]) for v in unlab_submap.vertices()}
-        
+
         return ColoredOrientedMap(vp=relab_submap._vp, ecolors=sub_edge_colors, vcolors=sub_vert_colors, mutable=mutable, check=check)
 
 
@@ -139,9 +139,9 @@ class ColoredOrientedMap(OrientedMap):
             - ``oriented``: boolean specifying whether edge should be oriented.
             - ``subdivide``: boolean specifying whether multiple edges and loop should be subdivided for pretty plotting.
             - ``edge_labels``: boolean specifying whether to plot the labels of the edges.
-            - ``edge_colors``: dictionnary specifying the color to assign to each edge color.
-            - ``vertex_colors``: dictionnary specifying the color to assign to each vertex color.
-            
+            - ``edge_colors``: dictionary specifying the color to assign to each edge color.
+            - ``vertex_colors``: dictionary specifying the color to assign to each vertex color.
+
         """
 
         if edge_colors is None:
@@ -155,7 +155,7 @@ class ColoredOrientedMap(OrientedMap):
 
         if vertex_colors is None:
             vert_cols = None
-        else: 
+        else:
             vert_cols = defaultdict(list)
             for i, v in enumerate(self.vertices()):
                 c = vertex_colors.get(self.vertex_color(v[0]))
@@ -163,12 +163,12 @@ class ColoredOrientedMap(OrientedMap):
                     vert_cols[c].append(i)
 
         return OrientedMap.plot(self, oriented=oriented, subdivide=subdivide, root=root, edge_labels=edge_labels, edge_colors=edge_cols, vertex_colors=vert_cols)
-            
+
 
     #############
     # Mutations #
     #############
-    
+
     def set_edge_color(self, h, col, check=True):
         r"""
         Change the color of the half edge h to col
@@ -200,8 +200,8 @@ class ColoredOrientedMap(OrientedMap):
             sage: M = ColoredOrientedMap(vp=[3, 4, 5, 0, 1, 2], vcolors={0:0, 1:2, 3:None}, ecolors = [5, None, 'a'], mutable=True)
             sage: M.add_edge(0, 2, e_color = 42)
             sage: M
-            ColoredOrientedMap("(0,3,~1)(~0,2)(1,~3,~2)", "(0,2,~3)(~0,~1,~2)(1,3)", 
-             edge colors: [5, None, 'a', 42], 
+            ColoredOrientedMap("(0,3,~1)(~0,2)(1,~3,~2)", "(0,2,~3)(~0,~1,~2)(1,3)",
+             edge colors: [5, None, 'a', 42],
              vertex colors: {0: 0, 1: 2, 2: None})
 
             sage: E = ColoredOrientedMap(vp=[], vcolors={-1:'a'}, mutable=True)
@@ -209,7 +209,7 @@ class ColoredOrientedMap(OrientedMap):
             sage: E
             ColoredOrientedMap("(0)(~0)", "(0,~0)", edge colors: [None], vertex colors: {0: 'a', 1: 'b'})
         """
-        
+
         n = len(self._vp)
         if h0 < 0 :
             if n == 0 and v0_color is None:
@@ -220,14 +220,14 @@ class ColoredOrientedMap(OrientedMap):
             self._vertex_colors[n+1] = v1_color
         if n == 0:
             self._vertex_colors.pop(-1)
-        
+
         OrientedMap.add_edge(self, h0=h0, h1=h1, e=e, check=check)
         self._edge_colors.append(e_color)
-            
+
 
     def insert_edge(self, h0=-1, h1=-1, e=None, e_color=None, v_color=None, check=2):
         r"""
-        Add an edge by spliting the vertex of ``h0`` and ``h1`` between them with color col. The two new vertices will have the same color as the original one.
+        Add an edge by splitting the vertex of ``h0`` and ``h1`` between them with color col. The two new vertices will have the same color as the original one.
 
         EXAMPLES::
 
@@ -235,14 +235,14 @@ class ColoredOrientedMap(OrientedMap):
             sage: M = ColoredOrientedMap(vp="(0, 1, 2)(~0, 3, ~3)(~1,~2)", vcolors={0:0, 1:2, 3:None}, ecolors = [5, 7, 11, 13], mutable=True)
             sage: M.insert_edge(0, 2, e_color=42)
             sage: M
-            ColoredOrientedMap("(0,1,2)(~0,3,~3,~4,~1,~2,4)", "(0,4,~3,~0,2,~1)(1,~4,~2)(3)", 
-            edge colors: [5, 7, 11, 13, 42], 
+            ColoredOrientedMap("(0,1,2)(~0,3,~3,~4,~1,~2,4)", "(0,4,~3,~0,2,~1)(1,~4,~2)(3)",
+            edge colors: [5, 7, 11, 13, 42],
             vertex colors: {0: 0, 1: 2, 3: None})
 
             sage: M.insert_edge(-1, -2, e_color='loop', v_color='n')
             sage: M
-            ColoredOrientedMap("(0,1,2)(~0,3,~3,~4,~1,~2,4)(5,~5)", "(0,4,~3,~0,2,~1)(1,~4,~2)(3)(5)(~5)", 
-             edge colors: [5, 7, 11, 13, 42, 'loop'], 
+            ColoredOrientedMap("(0,1,2)(~0,3,~3,~4,~1,~2,4)(5,~5)", "(0,4,~3,~0,2,~1)(1,~4,~2)(3)(5)(~5)",
+             edge colors: [5, 7, 11, 13, 42, 'loop'],
              vertex colors: {0: 0, 1: 2, 3: None, 10: 'n'})
         """
 
@@ -263,12 +263,12 @@ class ColoredOrientedMap(OrientedMap):
         for h, c in self._vertex_colors.items():
             if h < 2*e:
                 vertex_colors[h] = c
-            elif h == 2*e: 
+            elif h == 2*e:
                 if h0 < 2*e:
                     vertex_colors[self._v_id(h0)] = c
                 elif h0 > 2*e+1:
                     vertex_colors[self._v_id(h0-2)] = c
-            elif h == 2*e+1: 
+            elif h == 2*e+1:
                 if h1 < 2*e:
                     vertex_colors[self._v_id(h1)] = c
                 elif h1 > 2*e+1:
@@ -277,12 +277,12 @@ class ColoredOrientedMap(OrientedMap):
                 vertex_colors[h-2] = c
         self._vertex_colors = vertex_colors
 
-    
+
     def contract_edge(self, e, check=2):
         r"""
-        Contract the edge ``e``. 
+        Contract the edge ``e``.
         If both end point have the same color they keep it, if one is ``None``the new vertex gets the others color, otherwise it becomes ``None``.
-        
+
         EXAMPLES::
 
             sage: from combisurf import ColoredOrientedMap
@@ -317,13 +317,13 @@ class ColoredOrientedMap(OrientedMap):
     def delete_edge(self, e, check=2):
         r"""
         Delete the edge ``e``.
-        
+
         EXAMPLES::
 
             sage: from combisurf import ColoredOrientedMap
             sage: M = ColoredOrientedMap(vp="(0, 1, ~2)(~0, 3, ~3)(~1,2)", vcolors={0:0, 1:2, 3:None}, ecolors = [5, 7, 11, 13], mutable=True)
             sage: M.delete_edge(2)
-            sage: M
+            sage: M  # not tested
             ColoredOrientedMap("(0,~1)(~0,2,~2)(1)", "(0,~2,~0,~1,1)(2)", edge colors: [5, 11, 13], vertex colors: {0: 0, 1: 2, 2: None})
         """
 
@@ -341,8 +341,8 @@ class ColoredOrientedMap(OrientedMap):
 
             sage: from combisurf import ColoredOrientedMap
             sage: M = ColoredOrientedMap(vp="(0, 1, 2)(~0, 3, ~3)(~1,~2)", vcolors={0:0, 1:2, 3:None}, ecolors = [5, 7, 11, 13], mutable=True)
-            sage: M.reverse_orientation(1)
-             ColoredOrientedMap("(0,~1,2)(~0,3,~3)(1,~2)", "(0,~3,~0,2,1)(~1,~2)(3)", 
+            sage: M.reverse_orientation(1)  # not tested
+             ColoredOrientedMap("(0,~1,2)(~0,3,~3)(1,~2)", "(0,~3,~0,2,1)(~1,~2)(3)",
              edge colors: [5, 7, 11, 13], vertex colors: {0: 0, 1: 2, 2: None})
         """
 
@@ -369,15 +369,15 @@ class ColoredOrientedMap(OrientedMap):
             sage: M = ColoredOrientedMap(vp="(0,1,2)(~0,3,4,~4)(~1,~3,5)(~2,~5,6)(~7,~6,7)", vcolors={0:0, 1:1, 3:0, 5:1, 13:1}, ecolors=[i%2 for i in range(8)], mutable=True)
             sage: M.move_half_edge(9, 7)
             sage: M
-            ColoredOrientedMap("(0,1,2)(~0,3,4)(~1,~3,~4,5)(~2,~5,6)(~6,7,~7)", "(0,4,~3,~0,2,6,~7,~6,~5,~4,3,~1)(1,5,~2)(7)", 
+            ColoredOrientedMap("(0,1,2)(~0,3,4)(~1,~3,~4,5)(~2,~5,6)(~6,7,~7)", "(0,4,~3,~0,2,6,~7,~6,~5,~4,3,~1)(1,5,~2)(7)",
              edge colors: [0, 1, 0, 1, 0, 1, 0, 1], vertex colors: {0: 0, 1: 1, 3: 0, 5: 1, 13: 1})
             sage: M.move_half_edge(1, 10)
             sage: M
-            ColoredOrientedMap("(0,1,2)(~0,~1,~3,~4,5)(~2,~5,6)(3,4)(~6,7,~7)", "(0,5,~2,1,~0,2,6,~7,~6,~5,~4,3,~1)(~3,4)(7)", 
+            ColoredOrientedMap("(0,1,2)(~0,~1,~3,~4,5)(~2,~5,6)(3,4)(~6,7,~7)", "(0,5,~2,1,~0,2,6,~7,~6,~5,~4,3,~1)(~3,4)(7)",
              edge colors: [0, 1, 0, 1, 0, 1, 0, 1], vertex colors: {0: 0, 1: 0, 5: 1, 13: 1, 6: 1})
             sage: M.move_half_edge(12, -1, v_color=42)
             sage: M
-             ColoredOrientedMap("(0,1,2)(~0,~1,~3,~4,5)(~2,~5)(3,4)(6)(~6,7,~7)", "(0,5,~2,1,~0,2,~5,~4,3,~1)(~3,4)(6,~7,~6)(7)", 
+             ColoredOrientedMap("(0,1,2)(~0,~1,~3,~4,5)(~2,~5)(3,4)(6)(~6,7,~7)", "(0,5,~2,1,~0,2,~5,~4,3,~1)(~3,4)(6,~7,~6)(7)",
              edge colors: [0, 1, 0, 1, 0, 1, 0, 1], vertex colors: {0: 0, 1: 0, 5: 1, 13: 1, 6: 1, 12: 42})
         """
 
@@ -387,8 +387,8 @@ class ColoredOrientedMap(OrientedMap):
             c = self._check_half_edge_or_negative(c)
 
         if h == c:
-            return None 
-        
+            return None
+
         nh = None
         if h == self._v_id(h):
             if self.next_at_vertex(h) == h:
@@ -405,15 +405,15 @@ class ColoredOrientedMap(OrientedMap):
             if h != self._v_id(c):
                 self._vertex_colors.pop(self._v_id(c))
             recycle = False
-            
+
         OrientedMap.move_half_edge(self, h, c, check=check)
-        
+
         if nh is not None:
             self._vertex_colors[self._v_id(nh)]=colh
             if recycle:
                 self._vertex_colors.pop(h)
 
-        
+
 
 
     def disjoint_union(self, *others, check=True):
@@ -421,13 +421,13 @@ class ColoredOrientedMap(OrientedMap):
         Add a copy of others in self. The labels of the half edges of others will be shifted by the sizes of the previous maps.
 
         EXAMPLES::
-        
+
             sage: from combisurf import ColoredOrientedMap
             sage: M1 = ColoredOrientedMap(vp="(0, 1, 2)(~0, 3, ~3)(~1,~2)", vcolors={0:0, 1:2, 3:None}, ecolors = [5, 7, 11, 13], mutable=True)
             sage: M2 = ColoredOrientedMap(vp="(0, 1)(~0, ~1)", vcolors={0:True, 1:False}, ecolors = ['a', 'b'])
             sage: M1.disjoint_union(M2)
             sage: M1
-            ColoredOrientedMap("(0,1,2)(~0,3,~3)(~1,~2)(4,5)(~4,~5)", "(0,~3,~0,2,~1)(1,~2)(3)(4,~5)(~4,5)", 
+            ColoredOrientedMap("(0,1,2)(~0,3,~3)(~1,~2)(4,5)(~4,~5)", "(0,~3,~0,2,~1)(1,~2)(3)(4,~5)(~4,5)",
              edge colors: [5, 7, 11, 13, 'a', 'b'], vertex colors: {0: 0, 1: 2, 3: None, 8: True, 9: False})
         """
 
@@ -439,23 +439,23 @@ class ColoredOrientedMap(OrientedMap):
                 self._vertex_colors[v+shift]=c
             shift += len(m._vp)
 
-    
+
 
     def merge_vertices(self, *corners, color=None, check=True):
         r"""
         Merges the corners in corners. If color is given then the new vertex takes this color. Otherwise if exactly one color is present among the corners then it keeps it.
 
         EXAMPLES::
-        
+
             sage: from combisurf import ColoredOrientedMap
             sage: M = ColoredOrientedMap(vp="(0,1,2)(~0,3,~3)(~1,~2)(4,5)(~4,~5)", ecolors=[5, 7, 11, 13, 'a', 'b'], vcolors={0: 0, 1: 2, 3: True, 8: True, 9: False}, mutable = True)
             sage: M.merge_vertices(3, 8)
             sage: M
-            ColoredOrientedMap("(0,1,2)(~0,3,~3)(~1,5,4,~2)(~4,~5)", "(0,~3,~0,2,4,~5,~1)(1,~2)(3)(~4,5)", 
+            ColoredOrientedMap("(0,1,2)(~0,3,~3)(~1,5,4,~2)(~4,~5)", "(0,~3,~0,2,4,~5,~1)(1,~2)(3)(~4,5)",
              edge colors: [5, 7, 11, 13, 'a', 'b'], vertex colors: {0: 0, 1: 2, 9: False, 3: True})
             sage: M.merge_vertices(0, 1, color=42)
             sage: M
-            ColoredOrientedMap("(0,3,~3,~0,1,2)(~1,5,4,~2)(~4,~5)", "(0,~3)(~0,2,4,~5,~1)(1,~2)(3)(~4,5)", 
+            ColoredOrientedMap("(0,3,~3,~0,1,2)(~1,5,4,~2)(~4,~5)", "(0,~3)(~0,2,4,~5,~1)(1,~2)(3)(~4,5)",
              edge colors: [5, 7, 11, 13, 'a', 'b'], vertex colors: {9: False, 3: True, 0: 42})
         """
 
@@ -464,7 +464,7 @@ class ColoredOrientedMap(OrientedMap):
             self._check()
             for c in corners:
                 self._check_half_edge(c)
-        
+
         new_color = color
         if color is None :
             for c in corners:
@@ -485,18 +485,18 @@ class ColoredOrientedMap(OrientedMap):
         r"""
         Swap colors c0 and c1 in m.
         """
-    
+
         if check:
             self._assert_mutable()
             self._check()
-    
+
         for v, c in self._vertex_colors.items():
             if c == c0:
                 self._vertex_colors[v]=c1
             elif c == c1:
                 self._vertex_colors[v]=c0
-    
-    
+
+
 
     def relabel(self, p=None, check=2):
         raise NotImplementedError
@@ -506,6 +506,3 @@ class ColoredOrientedMap(OrientedMap):
 
     def smoothing(self, h, check=True):
         raise NotImplementedError
-
-
-        

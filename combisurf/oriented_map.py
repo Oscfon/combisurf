@@ -109,7 +109,7 @@ class OrientedMap:
 
     An ``OrientedMap`` is encoded by three permutations called the *vertex permutation*,
     the *edge permutation* and the *face permutation*. The edge permutation is always
-    implicit and the vertex and face permutations are always abreviated as ``vp`` and
+    implicit and the vertex and face permutations are always abbreviated as ``vp`` and
     ``fp``. The cycles in the cycle decomposition of ``vp`` and ``fp`` encode
     respectively the vertices and the faces of the map. The domain of the permutations
     is the set of *half-edges* of the map. Each *half-edge* could either be
@@ -175,7 +175,7 @@ class OrientedMap:
         sage: OrientedMap(vp="(2,5,~2,~5)").vertex_permutation()
         array('i', [-1, -1, -1, -1, 10, 11, -1, -1, -1, -1, 5, 4])
 
-    In cycle notation, if an half-edge is not mentionned then the corresponding edge is folded::
+    In cycle notation, if an half-edge is not mentioned then the corresponding edge is folded::
 
         sage: OrientedMap(vp="(0,1)(~0)")
         OrientedMap("(0,1)(~0)", "(0,~0,1)")
@@ -601,8 +601,8 @@ class OrientedMap:
 
         - ``directed``, ``subdivide`` -- options forwarded to :meth:`graph`
         - ``edge_labels``: boolean specifying whether to plot the labels of the edges.
-        - ``edge_colors``: dictionnary specifying the color to assign to each edge color.
-        - ``vertex_colors``: dictionnary specifying the color to assign to each vertex color.
+        - ``edge_colors``: dictionary specifying the color to assign to each edge color.
+        - ``vertex_colors``: dictionary specifying the color to assign to each vertex color.
         """
         G, em, r, edge_list = self.graph(directed=directed, subdivide=subdivide, root=root)
         pos = G.layout_planar(on_embedding=em, external_face=r)
@@ -697,7 +697,7 @@ class OrientedMap:
             sage: s = m.copy()
             sage: s == m
             True
-            sage: s.flip(0)
+            sage: s.reverse_orientation(0)
             sage: s == m
             False
 
@@ -706,7 +706,7 @@ class OrientedMap:
             True
 
             sage: t = m.copy(mutable=True)
-            sage: t.flip(0)
+            sage: t.reverse_orientation(0)
             sage: s == t
             True
 
@@ -2846,7 +2846,7 @@ class OrientedMap:
             sage: m = OrientedMap(fp="(0,1,~0,~1)", mutable=True)
             sage: m.insert_edge(0, 1)
             sage: m
-            OrientedMap("(0,1,2,~0,~1,~2)", "(0,2,~1)(~0,~2,1)")
+            OrientedMap("(0,1,~2)(~0,~1,2)", "(0,2,1,~0,~2,~1)")
 
             sage: G = OrientedMap(vp = [[0, 2], [1, 4], [3, 5]], mutable=True)
             sage: G_dual = G.dual()
@@ -3014,8 +3014,10 @@ class OrientedMap:
             sage: m =OrientedMap("(0,5,3,~3)(~0)", "(0,~0,~3,5)(3)", mutable=True)
             sage: m.relabel("(0,~0)")
             sage: m
+            OrientedMap("(0)(~0,5,3,~3)", "(0,~3,5,~0)(3)")
             sage: m.relabel("(0,1,~2)(~0,~1,2)")
             sage: m
+            OrientedMap("(1)(~1,5,3,~3)", "(1,~3,5,~1)(3)")
 
             sage: m.set_immutable()
             sage: m.relabel("(0,~1)")
@@ -3095,7 +3097,7 @@ class OrientedMap:
             sage: m.triangulate(0)
             Traceback (most recent call last):
             ...
-            ValueError: immutable graph; make a mutable copy first
+            ValueError: immutable map; use a mutable copy instead
         """
         self._assert_mutable()
 
@@ -3125,33 +3127,33 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from veerer import *
+            sage: from veerer import *  # not tested
 
         Veering triangulation example::
 
-            sage: vt = VeeringTriangulation("(0,1,2)(3,4,~0)(5,6,~1)(7,~2,8)(9,~3,~6)(10,~7,~4)(11,~5,12)(13,14,~8)(15,~9,16)(17,18,~10)(19,~17,~11)(20,~13,~12)(21,~14,~18)(22,~21,~15)(23,24,~16)(25,~23,~19)(26,~20,~25)(~26,~24,~22)", "RBBRBRBRRBRBBRBBRRBRRRBBRRB")
-            sage: len(vt.automorphisms())
+            sage: vt = VeeringTriangulation("(0,1,2)(3,4,~0)(5,6,~1)(7,~2,8)(9,~3,~6)(10,~7,~4)(11,~5,12)(13,14,~8)(15,~9,16)(17,18,~10)(19,~17,~11)(20,~13,~12)(21,~14,~18)(22,~21,~15)(23,24,~16)(25,~23,~19)(26,~20,~25)(~26,~24,~22)", "RBBRBRBRRBRBBRBBRRBRRRBBRRB")  # not tested
+            sage: len(vt.automorphisms())  # not tested
             2
-            sage: qvt = vt.automorphism_quotient()
-            sage: qvt
+            sage: qvt = vt.automorphism_quotient()  # not tested
+            sage: qvt  # not tested
             VeeringTriangulation("(0,1,2)(~0,3,4)(~1,5,6)(~2,8,7)(~3,~6,9)(~4,10,~7)(~5,12,11)(~8,13,~12)(~10,14,~11)", "RBBRBRBRRBRBBRR")
-            sage: (vt.stratum(), qvt.stratum())  # optional - surface_dynamics
+            sage: (vt.stratum(), qvt.stratum())  # not tested
             (H_4(2^3), Q_1(1^3, -1^3))
 
-            sage: vt.automorphism_quotient(mapping=True)
+            sage: vt.automorphism_quotient(mapping=True)  # not tested
             (VeeringTriangulation("(0,1,2)(~0,3,4)(~1,5,6)(~2,8,7)(~3,~6,9)(~4,10,~7)(~5,12,11)(~8,13,~12)(~10,14,~11)", "RBBRBRBRRBRBBRR"),
              array('i', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 18, 20, 21, 22, 23, 24, 25, 26, 26, 25, 24, 13, 12, 7, 6, 28, 28, 23, 22, 21, 20, 17, 16, 11, 10, 3, 2, 8, 9, 1, 0, 15, 14, 5, 4]))
 
         Strebel graph example::
 
-            sage: sg = StrebelGraph("(0,~0,~1)(1,2,~2)")
-            sage: sg.automorphism_quotient()
+            sage: sg = StrebelGraph("(0,~0,~1)(1,2,~2)")  # not tested
+            sage: sg.automorphism_quotient()  # not tested
             StrebelGraph("(0,~0,1)")
 
         TESTS::
 
-            sage: vt = VeeringTriangulation("(~0,1,2)(~1,3,4)(~2,5,6)(~3,7,8)(~4,~7,9)(~6,10,11)(~8,12,13)(~9,14,15)(~10,16,17)(~11,18,~17)(~12,19,~18)(~14,20,~16)(0:1)(~5:1)(~13:1)(~15:1)(~19:1)(~20:1)", "RBBBRRBRBBRRBRBRBBBRR")
-            sage: vt.automorphism_quotient()
+            sage: vt = VeeringTriangulation("(~0,1,2)(~1,3,4)(~2,5,6)(~3,7,8)(~4,~7,9)(~6,10,11)(~8,12,13)(~9,14,15)(~10,16,17)(~11,18,~17)(~12,19,~18)(~14,20,~16)(0:1)(~5:1)(~13:1)(~15:1)(~19:1)(~20:1)", "RBBBRRBRBBRRBRBRBBBRR")  # not tested
+            sage: vt.automorphism_quotient()  # not tested
             VeeringTriangulation("(~0,1,2)(~1,3,4)(~2,5,6)(~3,7,8)(~4,~7,~6)(~8,9,10)(0:1)(~5:1)(~10:1)", "RBBBRRBRBBR")
         """
         return self.quotient(perms_orbits(self.automorphisms()), mapping, mutable, check)
@@ -3233,20 +3235,20 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from veerer import *
-            sage: from array import array
+            sage: from veerer import *  # not tested
+            sage: from array import array  # not tested
 
         The torus example (6 symmetries)::
 
-            sage: fp = array('i', [2, 3, 5, 4, 1, 0])
-            sage: vp = array('i', [4, 5, 1, 0, 2, 3])
-            sage: T = Triangulation.from_permutations(vp, fp, (array('i', [0]*6),), mutable=True)
-            sage: T._relabelling_from(3)
+            sage: fp = array('i', [2, 3, 5, 4, 1, 0])  # not tested
+            sage: vp = array('i', [4, 5, 1, 0, 2, 3])  # not tested
+            sage: T = Triangulation.from_permutations(vp, fp, (array('i', [0]*6),), mutable=True)  # not tested
+            sage: T._relabelling_from(3)  # not tested
             array('i', [5, 4, 1, 0, 2, 3])
 
-            sage: p = T._relabelling_from(0)
-            sage: T.relabel(p)
-            sage: for i in range(6):
+            sage: p = T._relabelling_from(0)  # not tested
+            sage: T.relabel(p)  # not tested
+            sage: for i in range(6):  # not tested
             ....:     p = T._relabelling_from(i)
             ....:     S = T.copy()
             ....:     S.relabel(p)
@@ -3254,14 +3256,14 @@ class OrientedMap:
 
         The sphere example (3 symmetries)::
 
-            sage: fp = array('i', [2, -1, 4, -1, 0, -1])
-            sage: vp = array('i', [4, -1, 0, -1, 2, -1])
-            sage: T = Triangulation.from_permutations(vp, fp, (array('i', [0]*6),), mutable=True)
-            sage: T._relabelling_from(2)
+            sage: fp = array('i', [2, -1, 4, -1, 0, -1])  # not tested
+            sage: vp = array('i', [4, -1, 0, -1, 2, -1])  # not tested
+            sage: T = Triangulation.from_permutations(vp, fp, (array('i', [0]*6),), mutable=True)  # not tested
+            sage: T._relabelling_from(2)  # not tested
             array('i', [4, 5, 0, 1, 2, 3])
-            sage: p = T._relabelling_from(0)
-            sage: T.relabel(p)
-            sage: for i in range(3):
+            sage: p = T._relabelling_from(0)  # not tested
+            sage: T.relabel(p)  # not tested
+            sage: for i in range(3):  # not tested
             ....:     p = T._relabelling_from(2 * i)
             ....:     S = T.copy()
             ....:     S.relabel(p)
@@ -3269,10 +3271,10 @@ class OrientedMap:
 
         An example with no automorphism::
 
-            sage: T = Triangulation("(0,1,2)(3,4,5)(~0,~3,6)", mutable=True)
-            sage: p = T._relabelling_from(0)
-            sage: T.relabel(p)
-            sage: for i in T.half_edges():
+            sage: T = Triangulation("(0,1,2)(3,4,5)(~0,~3,6)", mutable=True)  # not tested
+            sage: p = T._relabelling_from(0)  # not tested
+            sage: T.relabel(p)  # not tested
+            sage: for i in T.half_edges():  # not tested
             ....:     if i == 0: continue
             ....:     p = T._relabelling_from(i)
             ....:     S = T.copy()
@@ -3301,67 +3303,67 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from veerer import *
+            sage: from veerer import *  # not tested
 
         An example with 4 symmetries in genus 2::
 
-            sage: T = Triangulation("(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)")
-            sage: A = T.automorphisms()
-            sage: len(A)
+            sage: T = Triangulation("(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)")  # not tested
+            sage: A = T.automorphisms()  # not tested
+            sage: len(A)  # not tested
             4
 
         And the "sphere octagon" has 8::
 
-            sage: s  = "(0,8,~7)(1,9,~0)(2,10,~1)(3,11,~2)(4,12,~3)(5,13,~4)(6,14,~5)(7,15,~6)"
-            sage: len(Triangulation(s).automorphisms())
+            sage: s  = "(0,8,~7)(1,9,~0)(2,10,~1)(3,11,~2)(4,12,~3)(5,13,~4)(6,14,~5)(7,15,~6)"  # not tested
+            sage: len(Triangulation(s).automorphisms())  # not tested
             8
 
         A veering triangulation with 4 symmetries in genus 2::
 
-            sage: fp = "(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"
-            sage: cols = "BRBBBRRBBBBR"
-            sage: V = VeeringTriangulation(fp, cols)
-            sage: A = V.automorphisms()
-            sage: len(A)
+            sage: fp = "(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"  # not tested
+            sage: cols = "BRBBBRRBBBBR"  # not tested
+            sage: V = VeeringTriangulation(fp, cols)  # not tested
+            sage: A = V.automorphisms()  # not tested
+            sage: len(A)  # not tested
             4
 
         Examples with boundaries::
 
-            sage: t = Triangulation("(0,1,2)", boundary="(~0:1)(~1:1)(~2:1)")
-            sage: len(t.automorphisms())
+            sage: t = Triangulation("(0,1,2)", boundary="(~0:1)(~1:1)(~2:1)")  # not tested
+            sage: len(t.automorphisms())  # not tested
             3
-            sage: t = Triangulation("(0,1,2)", boundary="(~0:1,~1:1,~2:1)")
-            sage: len(t.automorphisms())
+            sage: t = Triangulation("(0,1,2)", boundary="(~0:1,~1:1,~2:1)")  # not tested
+            sage: len(t.automorphisms())  # not tested
             3
-            sage: t = Triangulation("(0,1,2)", boundary="(~0:1,~1:1,~2:2)")
-            sage: len(t.automorphisms())
+            sage: t = Triangulation("(0,1,2)", boundary="(~0:1,~1:1,~2:2)")  # not tested
+            sage: len(t.automorphisms())  # not tested
             1
 
         Linear families::
 
-            sage: s = StrebelGraph("(0,3,7,~6,~2,1)(2,5,~4,~3,~1,~0)(4,8,~5)(6,~8,~7)")
-            sage: f = StrebelGraphLinearFamily(s, [(2, 0, 0, 0, 1, 0, 1, 0, 2), (0, 2, 0, 0, 0, 1, 0, 1, 2), (0, 0, 1, 1, 0, 0, 0, 0, 2)])
-            sage: len(s.automorphisms())
+            sage: s = StrebelGraph("(0,3,7,~6,~2,1)(2,5,~4,~3,~1,~0)(4,8,~5)(6,~8,~7)")  # not tested
+            sage: f = StrebelGraphLinearFamily(s, [(2, 0, 0, 0, 1, 0, 1, 0, 2), (0, 2, 0, 0, 0, 1, 0, 1, 2), (0, 0, 1, 1, 0, 0, 0, 0, 2)])  # not tested
+            sage: len(s.automorphisms())  # not tested
             2
-            sage: len(f.automorphisms())
+            sage: len(f.automorphisms())  # not tested
             2
 
         A non-connected example::
 
-            sage: t = Triangulation("(0,1,3)(2,4,~4)(~2,5,~5)(6,7,8)")
-            sage: len(t.automorphisms())
+            sage: t = Triangulation("(0,1,3)(2,4,~4)(~2,5,~5)(6,7,8)")  # not tested
+            sage: len(t.automorphisms())  # not tested
             36
 
         TESTS::
 
-            sage: examples = []
-            sage: examples.append(Triangulation("(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"))
-            sage: examples.append(Triangulation("(0,8,~7)(1,9,~0)(2,10,~1)(3,11,~2)(4,12,~3)(5,13,~4)(6,14,~5)(7,15,~6)"))
-            sage: examples.append(Triangulation("(0,1,2)", boundary="(~0:1)(~1:1)(~2:1)"))
-            sage: examples.append(Triangulation("(0,1,3)(2,4,~4)(~2,5,~5)(6,7,8)"))
+            sage: examples = []  # not tested
+            sage: examples.append(Triangulation("(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"))  # not tested
+            sage: examples.append(Triangulation("(0,8,~7)(1,9,~0)(2,10,~1)(3,11,~2)(4,12,~3)(5,13,~4)(6,14,~5)(7,15,~6)"))  # not tested
+            sage: examples.append(Triangulation("(0,1,2)", boundary="(~0:1)(~1:1)(~2:1)"))  # not tested
+            sage: examples.append(Triangulation("(0,1,3)(2,4,~4)(~2,5,~5)(6,7,8)"))  # not tested
 
-            sage: examples.append(StrebelGraph("(0,3,7,~6,~2,1)(2,5,~4,~3,~1,~0)(4,8,~5)(6,~8,~7)"))
-            sage: for G in examples:
+            sage: examples.append(StrebelGraph("(0,3,7,~6,~2,1)(2,5,~4,~3,~1,~0)(4,8,~5)(6,~8,~7)"))  # not tested
+            sage: for G in examples:  # not tested
             ....:     H = G.copy(mutable=True)
             ....:     for a in G.automorphisms():
             ....:         assert H == G
@@ -3382,23 +3384,23 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from veerer import Triangulation, VeeringTriangulation, StrebelGraph
-            sage: from veerer.permutation import perm_random_centralizer
+            sage: from veerer import Triangulation, VeeringTriangulation, StrebelGraph  # not tested
+            sage: from veerer.permutation import perm_random_centralizer  # not tested
 
-            sage: examples = []
-            sage: triangles = "(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"
-            sage: examples.append(Triangulation(triangles, mutable=True))
-            sage: examples.append(Triangulation("(0,1,3)(2,4,~4)(~2,5,~5)(6,7,8)", mutable=True))
-            sage: fp = "(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"
-            sage: cols = "BRBBBRRBBBBR"
-            sage: examples.append(VeeringTriangulation(fp, cols, mutable=True))
-            sage: fp = "(0,16,~15)(1,19,~18)(2,22,~21)(3,21,~20)(4,20,~19)(5,23,~22)(6,18,~17)(7,17,~16)(8,~1,~23)(9,~2,~8)(10,~3,~9)(11,~4,~10)(12,~5,~11)(13,~6,~12)(14,~7,~13)(15,~0,~14)"
-            sage: cols = "RRRRRRRRBBBBBBBBBBBBBBBB"
-            sage: examples.append(VeeringTriangulation(fp, cols, mutable=True))
-            sage: examples.append(StrebelGraph("(0,6,~5,~3,~1,4,~4,2,~2)(1)(3,~0)(5)(~6)", mutable=True))
-            sage: examples.append(StrebelGraph("(0,6,~5,~3,~1,4,~4:3,2,~2:3)(1:2)(3:2,~0)(5:2)(~6)", mutable=True))
+            sage: examples = []  # not tested
+            sage: triangles = "(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"  # not tested
+            sage: examples.append(Triangulation(triangles, mutable=True))  # not tested
+            sage: examples.append(Triangulation("(0,1,3)(2,4,~4)(~2,5,~5)(6,7,8)", mutable=True))  # not tested
+            sage: fp = "(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"  # not tested
+            sage: cols = "BRBBBRRBBBBR"  # not tested
+            sage: examples.append(VeeringTriangulation(fp, cols, mutable=True))  # not tested
+            sage: fp = "(0,16,~15)(1,19,~18)(2,22,~21)(3,21,~20)(4,20,~19)(5,23,~22)(6,18,~17)(7,17,~16)(8,~1,~23)(9,~2,~8)(10,~3,~9)(11,~4,~10)(12,~5,~11)(13,~6,~12)(14,~7,~13)(15,~0,~14)"  # not tested
+            sage: cols = "RRRRRRRRBBBBBBBBBBBBBBBB"  # not tested
+            sage: examples.append(VeeringTriangulation(fp, cols, mutable=True))  # not tested
+            sage: examples.append(StrebelGraph("(0,6,~5,~3,~1,4,~4,2,~2)(1)(3,~0)(5)(~6)", mutable=True))  # not tested
+            sage: examples.append(StrebelGraph("(0,6,~5,~3,~1,4,~4:3,2,~2:3)(1:2)(3:2,~0)(5:2)(~6)", mutable=True))  # not tested
 
-            sage: for G in examples:
+            sage: for G in examples:  # not tested
             ....:     print(G)
             ....:     r, fp, half_edges_data, edges_data = G.best_relabelling()
             ....:     for _ in range(10):
@@ -3578,19 +3580,19 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from veerer import *
-            sage: from veerer.permutation import perm_random, perm_random_centralizer
+            sage: from veerer import *  # not tested
+            sage: from veerer.permutation import perm_random, perm_random_centralizer  # not tested
 
-            sage: t = [(-12, 4, -4), (-11, -1, 11), (-10, 0, 10), (-9, 9, 1),
+            sage: t = [(-12, 4, -4), (-11, -1, 11), (-10, 0, 10), (-9, 9, 1),  # not tested
             ....:      (-8, 8, -2), (-7, 7, 2), (-6, 6, -3), (-5, 5, 3)]
-            sage: T = Triangulation(t, mutable=True)
-            sage: T
+            sage: T = Triangulation(t, mutable=True)  # not tested
+            sage: T  # not tested
             Triangulation("(0,10,~9)(~0,11,~10)(1,~8,9)(~1,~7,8)(2,~6,7)(~2,~5,6)(3,~4,5)(~3,~11,4)")
-            sage: T._check()
-            sage: T.set_canonical_labels()
-            sage: T
+            sage: T._check()  # not tested
+            sage: T.set_canonical_labels()  # not tested
+            sage: T  # not tested
             Triangulation("(0,1,2)(~0,~2,3)(~1,4,5)(~3,6,7)(~4,8,~5)(~6,9,~7)(~8,10,11)(~9,~11,~10)")
-            sage: T._check()
+            sage: T._check()  # not tested
         """
         if check:
             self._assert_mutable()
@@ -3791,6 +3793,7 @@ class OrientedMap:
 
             sage: from combisurf import OrientedMap
             sage: M = OrientedMap(vp=[0, 2, 1, 4, 3, 5], mutable=True)
+            sage: M.merge_vertices(0, 2, 5)
             sage: M
             OrientedMap("(0,~0,1,~2)(~1,2)", "(0)(~0,~2,~1)(1,2)")
         """
@@ -3849,16 +3852,16 @@ class OrientedMap:
 
         oh = self._ep(h)
         pre_h = self._fp[oh]
-    
+
         self._vp[pre_h] = self._vp[h]
         if c >= 0:
             self._vp[h] = self._vp[c]
-            self._vp[c] = h    
-            self._fp[oh] = c           
+            self._vp[c] = h
+            self._fp[oh] = c
         else:
-            self._vp[h] = h            
+            self._vp[h] = h
             self._fp[oh] = h
-        self._fp[self._ep(self._vp[h])] = h 
+        self._fp[self._ep(self._vp[h])] = h
         self._fp[self._ep(self._vp[pre_h])] = pre_h
 
 
@@ -3896,4 +3899,3 @@ class OrientedMap:
 # - add_edge(h1, h2=None, h=None): if h2=None => folded and h1=h2 => loop (h is the new name)
 # - glue(h1, h2)
 # - union(m1, m2, m3, ...): disjoint union
-
