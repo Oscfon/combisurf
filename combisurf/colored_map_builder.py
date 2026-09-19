@@ -170,7 +170,7 @@ def sew_face_3col(mgray, mred, cw, rgray=None, rred = None, check=True):
 
 def expand_vertex_3col(mred, mgray, cw,  rred=None, rgray=None, swap=False, shift=False, check=True):
     r"""
-    Splits the root vertex of ``mred`` in two and expands one half into ``mgray``, positionning the edge as described in ``cw``
+    Splits the root vertex of ``mred`` in two and expands one half into ``mgray``, positioning the edge as described in ``cw``
 
     INPUT:
         - ``mred``: a red map

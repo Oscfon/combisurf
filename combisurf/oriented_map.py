@@ -109,7 +109,7 @@ class OrientedMap:
 
     An ``OrientedMap`` is encoded by three permutations called the *vertex permutation*,
     the *edge permutation* and the *face permutation*. The edge permutation is always
-    implicit and the vertex and face permutations are always abreviated as ``vp`` and
+    implicit and the vertex and face permutations are always abbreviated as ``vp`` and
     ``fp``. The cycles in the cycle decomposition of ``vp`` and ``fp`` encode
     respectively the vertices and the faces of the map. The domain of the permutations
     is the set of *half-edges* of the map. Each *half-edge* could either be
@@ -175,7 +175,7 @@ class OrientedMap:
         sage: OrientedMap(vp="(2,5,~2,~5)").vertex_permutation()
         array('i', [-1, -1, -1, -1, 10, 11, -1, -1, -1, -1, 5, 4])
 
-    In cycle notation, if an half-edge is not mentionned then the corresponding edge is folded::
+    In cycle notation, if an half-edge is not mentioned then the corresponding edge is folded::
 
         sage: OrientedMap(vp="(0,1)(~0)")
         OrientedMap("(0,1)(~0)", "(0,~0,1)")
@@ -601,8 +601,8 @@ class OrientedMap:
 
         - ``directed``, ``subdivide`` -- options forwarded to :meth:`graph`
         - ``edge_labels``: boolean specifying whether to plot the labels of the edges.
-        - ``edge_colors``: dictionnary specifying the color to assign to each edge color.
-        - ``vertex_colors``: dictionnary specifying the color to assign to each vertex color.
+        - ``edge_colors``: dictionary specifying the color to assign to each edge color.
+        - ``vertex_colors``: dictionary specifying the color to assign to each vertex color.
         """
         G, em, r, edge_list = self.graph(directed=directed, subdivide=subdivide, root=root)
         pos = G.layout_planar(on_embedding=em, external_face=r)

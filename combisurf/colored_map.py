@@ -30,8 +30,8 @@ from collections import defaultdict
 class ColoredOrientedMap(OrientedMap):
     r"""
     INPUT:
-        - ``ecolors`` -- ``None`` or a list or dictionnary of data so that ecolors[i] is the data associated to the edge (2i,2i+1).
-        - ``vcolors`` -- a dictionnary of data so that vcolors[h] is the data associated to the vertex incident to half edge h, and only one half edge incident to a given vertex is present. If the map is atomic (no edges), the color of the vertex can be specified in entry ``-1``.
+        - ``ecolors`` -- ``None`` or a list or dictionary of data so that ecolors[i] is the data associated to the edge (2i,2i+1).
+        - ``vcolors`` -- a dictionary of data so that vcolors[h] is the data associated to the vertex incident to half edge h, and only one half edge incident to a given vertex is present. If the map is atomic (no edges), the color of the vertex can be specified in entry ``-1``.
     """
     def __init__(self, vp=None, fp=None, vcolors={}, ecolors=None, mutable=False, check=True):
         OrientedMap.__init__(self, vp, fp, mutable, check)
@@ -47,7 +47,7 @@ class ColoredOrientedMap(OrientedMap):
             elif isinstance(ecolors, dict):
                 self._edge_colors = [ecolors.get(e) for e in range(len(self._vp)//2)]
             else:
-                raise TypeError("ecolors should be a list or dictionnary")
+                raise TypeError("ecolors should be a list or dictionary")
 
         self._vertex_colors = {}
         if len(self._vp) == 0:
@@ -139,8 +139,8 @@ class ColoredOrientedMap(OrientedMap):
             - ``oriented``: boolean specifying whether edge should be oriented.
             - ``subdivide``: boolean specifying whether multiple edges and loop should be subdivided for pretty plotting.
             - ``edge_labels``: boolean specifying whether to plot the labels of the edges.
-            - ``edge_colors``: dictionnary specifying the color to assign to each edge color.
-            - ``vertex_colors``: dictionnary specifying the color to assign to each vertex color.
+            - ``edge_colors``: dictionary specifying the color to assign to each edge color.
+            - ``vertex_colors``: dictionary specifying the color to assign to each vertex color.
 
         """
 
@@ -227,7 +227,7 @@ class ColoredOrientedMap(OrientedMap):
 
     def insert_edge(self, h0=-1, h1=-1, e=None, e_color=None, v_color=None, check=2):
         r"""
-        Add an edge by spliting the vertex of ``h0`` and ``h1`` between them with color col. The two new vertices will have the same color as the original one.
+        Add an edge by splitting the vertex of ``h0`` and ``h1`` between them with color col. The two new vertices will have the same color as the original one.
 
         EXAMPLES::
 

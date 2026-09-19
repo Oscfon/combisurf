@@ -11,7 +11,7 @@ TODO:
 - There are several functions that return a list of lists
   that could be encoded in a more compact form. Namely
   this only requires two attributes ``content`` and ``bounds``
-  where each list is a slice content[bouds[i]:bounds[i+1]].
+  where each list is a slice content[bounds[i]:bounds[i+1]].
 """
 # ****************************************************************************
 #  This file is part of combisurf
@@ -36,7 +36,7 @@ TODO:
 from cpython cimport array
 from math import log
 
-import sage.all
+import sage.all  # no-cython-lint
 from sage.misc.prandom import shuffle, randint
 from sage.arith.functions import lcm
 
@@ -388,7 +388,7 @@ def str_to_cycles(s):
         sage: str_to_cycles("(0,1)(3,2)")
         [[0, 1], [3, 2]]
 
-    An integer ``i`` preceeded by a ``"~"`` is interpreted as ``-i-1``::
+    An integer ``i`` preceded by a ``"~"`` is interpreted as ``-i-1``::
 
         sage: str_to_cycles("(0,1,2)(~0,~1,~2)")
         [[0, 1, 2], [-1, -2, -3]]
@@ -2048,7 +2048,7 @@ def perms_canonical_labels_from(x, y, j0):
 
     k = 0
     mapping = [None] * n
-    waiting = [[] for i in range(len(y))]
+    waiting = [[] for _ in range(len(y))]
 
     while k < n:
         # initialize at j0
@@ -2130,7 +2130,7 @@ def edge_relabelling_from(array.array relabelling, array.array pnew, array.array
 
     cdef array.array to_process = array.clone(p, n, False)  # FIFO stack of half-edges to process
     cdef int s, t  # bottom and top of to_process
-    cdef int e, e1
+    cdef int e
 
     to_process.data.as_ints[0] = root
     s = 0
