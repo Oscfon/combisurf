@@ -3849,16 +3849,16 @@ class OrientedMap:
 
         oh = self._ep(h)
         pre_h = self._fp[oh]
-    
+
         self._vp[pre_h] = self._vp[h]
         if c >= 0:
             self._vp[h] = self._vp[c]
-            self._vp[c] = h    
-            self._fp[oh] = c           
+            self._vp[c] = h
+            self._fp[oh] = c
         else:
-            self._vp[h] = h            
+            self._vp[h] = h
             self._fp[oh] = h
-        self._fp[self._ep(self._vp[h])] = h 
+        self._fp[self._ep(self._vp[h])] = h
         self._fp[self._ep(self._vp[pre_h])] = pre_h
 
 
@@ -3896,4 +3896,3 @@ class OrientedMap:
 # - add_edge(h1, h2=None, h=None): if h2=None => folded and h1=h2 => loop (h is the new name)
 # - glue(h1, h2)
 # - union(m1, m2, m3, ...): disjoint union
-

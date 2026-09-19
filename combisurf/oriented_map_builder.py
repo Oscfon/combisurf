@@ -9,7 +9,7 @@ def atomic():
 
 def bridge(m1, m2, r1=None, r2=None, check=True):
     r"""
-    Add a copy of ``m2`` in ``m1`` and joins them with an edge from the root corner of ``m1`` to the co-root corner of ``m2``. 
+    Add a copy of ``m2`` in ``m1`` and joins them with an edge from the root corner of ``m1`` to the co-root corner of ``m2``.
 
     INPUT:
         - ``m1`, ``m2``: maps
@@ -32,11 +32,11 @@ def bridge(m1, m2, r1=None, r2=None, check=True):
         m1._assert_mutable()
         m1._check()
         m2._check()
-    
+
     if r1 is None :
         r1 = len(m1._vp)-2
     if r2 is None:
-        r2 = len(m2._vp)-2  
+        r2 = len(m2._vp)-2
     n1 = len(m1._vp)
     n2 = len(m2._vp)
     if n2 == 0:
@@ -53,7 +53,7 @@ def peninsula(m1, m2, r1=None, r2=None, check=True):
     INPUT:
         - ``m1``, ``m2``: maps
         - ``r1``, ``r2``: their root half edges, if ``None`` then assumed to be 2ni-2
-    
+
     EXAMPLES::
 
             sage: from combisurf import OrientedMap
@@ -72,11 +72,11 @@ def peninsula(m1, m2, r1=None, r2=None, check=True):
         m1._assert_mutable()
         m1._check()
         m2._check()
-    
+
     if r1 is None :
         r1 = len(m1._vp)-2
     if r2 is None:
-        r2 = len(m2._vp)-2  
+        r2 = len(m2._vp)-2
     n1 = len(m1._vp)
     n2 = len(m2._vp)
     if n2 == 0:
@@ -151,7 +151,7 @@ def split_vertex(m, k, r=None, check=True):
             sage: M
             OrientedMap("(0,3)(~0)(1,2)(~1,~3)(~2)", "(0,~0,3,~1,2,~2,1,~3)")
     """
-    
+
     if check:
         m._assert_mutable()
         m._check()
@@ -180,13 +180,3 @@ def split_vertex(m, k, r=None, check=True):
             h1 = m.previous_in_face(c)
             m.insert_edge(h0, h1)
             m.move_half_edge(n+1, h1)
-            
-        
-        
-
-
-
-
-
-
-    

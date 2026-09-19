@@ -11,11 +11,11 @@ color_corresp = {0: 'white', 1: 'black', 2:'red'}
 
 def plot_3col(m):
     return m.plot(vertex_colors=color_corresp)
-        
+
 
 def bridge_3col(m1, m2, r1=None, r2=None, check=True):
     r"""
-    Add a copy of m2 in m1 and joins them with an edge from the root corner of m1 to the co-root corner of m2. If the root half edge is not provided it is assumed to be 2n-2. 
+    Add a copy of m2 in m1 and joins them with an edge from the root corner of m1 to the co-root corner of m2. If the root half edge is not provided it is assumed to be 2n-2.
 
     INPUT:
         - ``m1``, ``m2`` : gray maps
@@ -26,10 +26,10 @@ def bridge_3col(m1, m2, r1=None, r2=None, check=True):
             sage: M = atomic_3colmap()
             sage: bridge_3col(M, atomic_3colmap())
             ColoredOrientedMap("(0)(~0)", "(0,~0)", edge colors: [None], vertex colors: {0: 0, 1: 1})
-            
+
             sage: M1 = ColoredOrientedMap(vp="(0,1)(~0)(~1)", vcolors={0: 0, 1: 1, 3: 1}, mutable = True)
             sage: bridge_3col(M1, M)
-             ColoredOrientedMap("(0,1,3)(~0)(~1)(2)(~2,~3)", "(0,~0,3,~2,2,~3,1,~1)", 
+             ColoredOrientedMap("(0,1,3)(~0)(~1)(2)(~2,~3)", "(0,~0,3,~2,2,~3,1,~1)",
              edge colors: [None, None, None, None], vertex colors: {0: 0, 1: 1, 3: 1, 4: 0, 5: 1})
     """
 
@@ -37,11 +37,11 @@ def bridge_3col(m1, m2, r1=None, r2=None, check=True):
         m1._assert_mutable()
         m1._check()
         m2._check()
-    
+
     if r1 is None :
         r1 = len(m1._vp)-2
     if r2 is None:
-        r2 = len(m2._vp)-2  
+        r2 = len(m2._vp)-2
     n1 = len(m1._vp)
     n2 = len(m2._vp)
     if n2 == 0:
@@ -51,7 +51,7 @@ def bridge_3col(m1, m2, r1=None, r2=None, check=True):
         m1.add_edge(r1, m1._fp[n1+r2], v0_color=0)
 
     return m1
-    
+
 
 
 def peninsula_3col(m1, m2, r1=None, r2=None, check=True):
@@ -61,7 +61,7 @@ def peninsula_3col(m1, m2, r1=None, r2=None, check=True):
     INPUT:
         - ``m1``, ``m2``: red maps
         - ``r1``, ``r2``: their root half edges, if ``None`` then assumed to be 2ni-2
-    
+
     EXAMPLES::
 
             sage: M = atomic_3colmap(0)
@@ -70,7 +70,7 @@ def peninsula_3col(m1, m2, r1=None, r2=None, check=True):
             sage: M1 = ColoredOrientedMap("(0,1)(~0,~1)", "(0,~1)(~0,1)", vcolors: {-1: 0, 0: 0, 1: 2}, mutable = True)
             sage: M2 = ColoredOrientedMap("(0)(~0)", "(0,~0)", vcolors: {0: 0, 1: 2})
             sage: peninsula_3col(M1, M2)
-             ColoredOrientedMap("(0,1,2,3)(~0,~1)(~2,~3)", "(0,~1)(~0,3,~2,1)(2,~3)", 
+             ColoredOrientedMap("(0,1,2,3)(~0,~1)(~2,~3)", "(0,~1)(~0,3,~2,1)(2,~3)",
              edge colors: [None, None, None, None], vertex colors: {-1: 0, 1: 2, 5: 2, 0: 0})
     """
 
@@ -78,11 +78,11 @@ def peninsula_3col(m1, m2, r1=None, r2=None, check=True):
         m1._assert_mutable()
         m1._check()
         m2._check()
-    
+
     if r1 is None :
         r1 = len(m1._vp)-2
     if r2 is None:
-        r2 = len(m2._vp)-2  
+        r2 = len(m2._vp)-2
     n1 = len(m1._vp)
     n2 = len(m2._vp)
     if n2 == 0:
@@ -115,8 +115,8 @@ def sew_face_3col(mgray, mred, cw, rgray=None, rred = None, check=True):
             sage: M = ColoredOrientedMap(vp="(5, ~0)(0, ~1)(1,~2)(2,~3)(3,~4)(4,~5)", vcolors={0:1, 2:0, 4:1, 6:0, 8:1, 10:0}, mutable =True)
             sage: H = ColoredOrientedMap(vp="(0,1,2)(~0,~2,~1)", vcolors={0:0, 1:2})
             sage: sew_face_3col(M, H, [0, 2, 1, 0])
-             ColoredOrientedMap("(0,~1)(~0,5,8,9)(1,~2)(2,~9,6,~3)(3,7,~4)(4,~5)(~6,~8,~7)", "(0,9,2,1)(~0,~1,~2,~3,~4,~5)(3,6,~7)(4,7,~8,5)(~6,~9,8)", 
-             edge colors: [None, None, None, None, None, None, None, None, None, None], 
+             ColoredOrientedMap("(0,~1)(~0,5,8,9)(1,~2)(2,~9,6,~3)(3,7,~4)(4,~5)(~6,~8,~7)", "(0,9,2,1)(~0,~1,~2,~3,~4,~5)(3,6,~7)(4,7,~8,5)(~6,~9,8)",
+             edge colors: [None, None, None, None, None, None, None, None, None, None],
              vertex colors: {0: 1, 1: 0, 2: 0, 4: 1, 6: 0, 8: 1, 13: 2})
     """
 
@@ -124,22 +124,22 @@ def sew_face_3col(mgray, mred, cw, rgray=None, rred = None, check=True):
         mgray._assert_mutable()
         mgray._check()
         mred._check()
-    
+
     ngray = len(mgray._vp)
     nred = len(mred._vp)
     if rgray is None:
         rgray = ngray -2
     if rred is None:
         rred = nred -2
-        
-    if check:    
+
+    if check:
         if mgray.face_degree(rgray) < sum(cw)+1:
             raise ValueError("The face to create is bigger than the outer face.")
         if mred.vertex_degree(rred) != len(cw)-1:
             raise ValueError("The length of the connection word doesn't match the degree of the root vertex.")
         if sum(cw) % 2 == 0:
             raise ValueError("The sum of the moves in cw should be odd.")
-    
+
     mgray.disjoint_union(mred, check=False)
     if cw[0] > 0:
         new_root = rgray
@@ -179,18 +179,18 @@ def expand_vertex_3col(mred, mgray, cw,  rred=None, rgray=None, swap=False, shif
 
             sage: H = ColoredOrientedMap(vp="(0,1,2,3)(~0,~1)(~3,~2)", vcolors={0:0,1:2,5:2}, mutable=True)
             sage: expand_vertex_3col(H, atomic_3colmap(), [2])
-             ColoredOrientedMap("(0,4)(~0,~1,~4)(1,2,3)(~2,~3)", "(0,~4)(~0,4,~1,3,~2,1)(2,~3)", 
+             ColoredOrientedMap("(0,4)(~0,~1,~4)(1,2,3)(~2,~3)", "(0,~4)(~0,4,~1,3,~2,1)(2,~3)",
              edge colors: [None, None, None, None, None], vertex colors: {0: 0, 1: 2, 5: 2, 2: 0})
 
             sage: M = ColoredOrientedMap(vp="(~0,1)(~1,2)(~2,3,4)(~3,0)(~4}", vcolors={0:1,2:0,4:1,6:0,9:1}, mutable=True)
             sage: H = ColoredOrientedMap(vp="(0,1,2,3)(~0,~1)(~3,~2)", vcolors={0:0,1:2,5:2}, mutable=True)
             sage: expand_vertex_3col(H.copy(), M, [0,1,0,1,0,0,0])
-             ColoredOrientedMap("(0,9)(~0,~1,~9)(1,~6,7,2,8)(~2,~3)(3,~8)(4,~7)(~4,5)(~5,6)", "(0,~9)(~0,9,~1,8,3,~2,7,4,5,6,1)(2,~3,~8)(~4,~7,~6,~5)", 
-             edge colors: [None, None, None, None, None, None, None, None, None, None], 
+             ColoredOrientedMap("(0,9)(~0,~1,~9)(1,~6,7,2,8)(~2,~3)(3,~8)(4,~7)(~4,5)(~5,6)", "(0,~9)(~0,9,~1,8,3,~2,7,4,5,6,1)(2,~3,~8)(~4,~7,~6,~5)",
+             edge colors: [None, None, None, None, None, None, None, None, None, None],
              vertex colors: {0: 0, 1: 2, 5: 2, 8: 1, 9: 0, 11: 1, 6: 1, 2: 0})
             sage: expand_vertex_3col(H.copy(), M, [0,1,0,1,0,0,0], shift=True)
-             ColoredOrientedMap("(0,9)(~0,~1,~9)(1,~8)(2,~7,4)(~2,~3)(3,8,~6,7)(~4,5)(~5,6)", "(0,~9)(~0,9,~1,~8,3,~2,4,5,6,8,1)(2,~3,7)(~4,~7,~6,~5)", 
-             edge colors: [None, None, None, None, None, None, None, None, None, None], 
+             ColoredOrientedMap("(0,9)(~0,~1,~9)(1,~8)(2,~7,4)(~2,~3)(3,8,~6,7)(~4,5)(~5,6)", "(0,~9)(~0,9,~1,~8,3,~2,4,5,6,8,1)(2,~3,7)(~4,~7,~6,~5)",
+             edge colors: [None, None, None, None, None, None, None, None, None, None],
              vertex colors: {0: 0, 1: 2, 5: 2, 9: 0, 11: 1, 6: 0, 4: 1, 2: 1})
     """
 
@@ -207,7 +207,7 @@ def expand_vertex_3col(mred, mgray, cw,  rred=None, rgray=None, swap=False, shif
         rred = nred -2
     if swap:
         mgray.swap_color(check=check)
-    
+
     if check:
         if mred.vertex_degree(rred) < sum(cw)+1:
             raise ValueError("The vertex to create is bigger than the root vertex.")
@@ -215,7 +215,7 @@ def expand_vertex_3col(mred, mgray, cw,  rred=None, rgray=None, swap=False, shif
             raise ValueError("The length of the connection word doesn't match the degree of the outer face.")
 
     empty_deg = mred.vertex_degree(rred) == sum(cw)+1
-    
+
     cur_half_edge = rred
     if ngray >0:
         mred.disjoint_union(mgray, check=False)
@@ -238,14 +238,14 @@ def expand_vertex_3col(mred, mgray, cw,  rred=None, rgray=None, swap=False, shif
             mred.add_edge(-1, mred.previous_in_face(cur_corner), v0_color=0)
         else:
             mred.add_edge(nexth, mred.previous_in_face(cur_corner))
-        
+
     else:
         cur_corner = cur_half_edge
         nexth = mred.previous_at_vertex(cur_half_edge)
         if swap or shift:
             mred.move_half_edge(cur_half_edge, -1, v_color = 1)
         else:
-            mred.move_half_edge(cur_half_edge, -1, v_color = 0)    
+            mred.move_half_edge(cur_half_edge, -1, v_color = 0)
         for i in range(cw[0]):
             cur_half_edge = nexth
             nexth = mred.previous_at_vertex(cur_half_edge)
@@ -253,7 +253,6 @@ def expand_vertex_3col(mred, mgray, cw,  rred=None, rgray=None, swap=False, shif
         if empty_deg:
             mred.add_edge(-1, mred._ep(cur_half_edge), v0_color=0)
         else:
-            mred.add_edge(nexth, mred._ep(cur_half_edge))    
+            mred.add_edge(nexth, mred._ep(cur_half_edge))
 
     return mred
- 

@@ -410,7 +410,7 @@ class PlanarLayout:
 
         In each face we consider a repulsion force which for each pair of edges in the face
 
-        The repulsion force is a sum 
+        The repulsion force is a sum
         """
         # NOTE: in force.js this corresponds to repulsionForce which then calls
         # repulsionForceFace, then repulsionForceEdgeEdge, then repulsionForceNodeLink
@@ -461,7 +461,7 @@ class PlanarLayout:
                     force[:, v] += scale * (u0_to_v + u1_to_v)
 
                     # NOTE: we ignore the u0,u1 force here!
-                    # force[u0] -= scale * 
+                    # force[u0] -= scale *
                     # force[u1] -=
 
         return force
@@ -588,4 +588,3 @@ class PlanarLayout:
                 force[:, v_next] += -(target_angles[h] - angle) * right_perp
 
         return force
-
