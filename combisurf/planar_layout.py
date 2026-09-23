@@ -188,7 +188,7 @@ class PlanarLayout:
         sage: pl = PlanarLayout(m)
         sage: pl.plot()    # default embedding from sage
         Graphics object consisting of ... graphics primitives
-        sage: pl.refine()  # perform some refinement steps
+        sage: pl.refine()  # not tested (perform some refinement steps)
         sage: pl.plot()    # nicer plot
         Graphics object consisting of ... graphics primitives
     """
@@ -410,7 +410,7 @@ class PlanarLayout:
 
         In each face we consider a repulsion force which for each pair of edges in the face
 
-        The repulsion force is a sum 
+        The repulsion force is a sum
         """
         # NOTE: in force.js this corresponds to repulsionForce which then calls
         # repulsionForceFace, then repulsionForceEdgeEdge, then repulsionForceNodeLink
@@ -461,7 +461,7 @@ class PlanarLayout:
                     force[:, v] += scale * (u0_to_v + u1_to_v)
 
                     # NOTE: we ignore the u0,u1 force here!
-                    # force[u0] -= scale * 
+                    # force[u0] -= scale *
                     # force[u1] -=
 
         return force
@@ -588,4 +588,3 @@ class PlanarLayout:
                 force[:, v_next] += -(target_angles[h] - angle) * right_perp
 
         return force
-

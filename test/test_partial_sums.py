@@ -19,6 +19,3 @@ def test_partial_sums(n, repeat):
             s0 = P0.partial_sum(start, end)
             s1 = P1.partial_sum(start, end)
             assert s0 == s1, (s0, s1, P0._values, P1._values)
-
-
-

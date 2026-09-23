@@ -37,8 +37,8 @@ from array import array
 from sage.structure.richcmp import op_LT, op_LE, op_EQ, op_NE, op_GT, op_GE, rich_to_bool
 
 from combisurf.misc import array_hash
-from combisurf.permutation import (perm_init, perm_check, perm_cycles, perm_on_array, perm_on_edge_array,
-                          perm_invert, perm_conjugate, perm_conjugate_transposition_inplace, perm_cycle_string, perm_cycles_lengths,
+from combisurf.permutation import (perm_init, perm_check, perm_trim, perm_cycles, perm_on_array, perm_on_edge_array,
+                          perm_invert, perm_conjugate, perm_conjugate_transposition_inplace, perm_cycle_string, perm_dense_cycles, perm_cycles_lengths,
                           perm_cycles_to_string, perm_on_list, perm_on_edge_list, perm_cycle_type,
                           perm_num_cycles, str_to_cycles, str_to_cycles_and_data, perm_compose, perm_from_base64_str,
                           uint_base64_str, uint_from_base64_str, perm_base64_str,
@@ -91,14 +91,6 @@ def check_relabelling(arg, ne):
     return p
 
 
-
-def remove_trailing_minus_ones(p):
-    while p and p[-2] == -1:
-        if p[-1] != -1:
-            raise ValueError("invalid permutation")
-        p.pop()
-        p.pop()
-
 # half-edge versus dart
 
 # TODO: make sure to remove trailing -1 to make equality consistent
@@ -117,7 +109,7 @@ class OrientedMap:
 
     An ``OrientedMap`` is encoded by three permutations called the *vertex permutation*,
     the *edge permutation* and the *face permutation*. The edge permutation is always
-    implicit and the vertex and face permutations are always abreviated as ``vp`` and
+    implicit and the vertex and face permutations are always abbreviated as ``vp`` and
     ``fp``. The cycles in the cycle decomposition of ``vp`` and ``fp`` encode
     respectively the vertices and the faces of the map. The domain of the permutations
     is the set of *half-edges* of the map. Each *half-edge* could either be
@@ -183,7 +175,7 @@ class OrientedMap:
         sage: OrientedMap(vp="(2,5,~2,~5)").vertex_permutation()
         array('i', [-1, -1, -1, -1, 10, 11, -1, -1, -1, -1, 5, 4])
 
-    In cycle notation, if an half-edge is not mentionned then the corresponding edge is folded::
+    In cycle notation, if an half-edge is not mentioned then the corresponding edge is folded::
 
         sage: OrientedMap(vp="(0,1)(~0)")
         OrientedMap("(0,1)(~0)", "(0,~0,1)")
@@ -248,12 +240,6 @@ class OrientedMap:
                 if ii != -1:
                     fp[ii] = i
 
-        if len(vp) != len(fp):
-            raise ValueError(f"inconsistent input: vp has length {len(vp)} while fp has length {len(fp)}")
-
-        remove_trailing_minus_ones(vp)
-        remove_trailing_minus_ones(fp)
-
         self._vp = vp
         self._fp = fp
         self._mutable = mutable
@@ -261,6 +247,14 @@ class OrientedMap:
         if check:
             self._check(ValueError)
 
+    def _clear_trailing_edges(self):
+        vp = self._vp
+        fp = self._fp
+        while vp and vp[-2] == -1:
+            vp.pop()
+            vp.pop()
+            fp.pop()
+            fp.pop()
 
     def _half_edge_string(self, e):
         return '~%d' % (e // 2) if e % 2 else '%d' % (e // 2)
@@ -286,21 +280,31 @@ class OrientedMap:
             return h ^ 1
 
     def _check(self, error=RuntimeError):
-        ne = len(self._vp) // 2
-
         if not (hasattr(self, '_vp') and hasattr(self, '_fp')):
             raise error("missing attributes: these must be _vp, _ep, _fp, _data")
-        if not perm_check(self._vp, 2 * ne):
+        if not perm_check(self._vp):
             raise error(f"vp is not a permutation: {self._vp}")
-        if not perm_check(self._fp, 2 * ne):
+        if not perm_check(self._fp):
             raise error(f"fp is not a permutation: {self._fp}")
+        if len(self._vp) != len(self._fp):
+            raise error("vp and fp have different lengths")
+        if len(self._vp) % 2:
+            raise error("vp and fp must have even lengths")
 
-        if self._vp and (self._vp[-2] == -1 or self._fp[-2] == -1):
-            raise error("trailing -1 in vertex or face permutation")
+        ne = len(self._vp) // 2
+        if ne == 0:
+            return
 
         for h in range(2 * ne):
             if (self._vp[h] == -1) != (self._fp[h] == -1):
-                raise ValueError(f"vp (={self._vp}) and fp (={self._fp}) with different domains")
+                raise error(f"vp (={self._vp}) and fp (={self._fp}) with different domains")
+
+        for e in range(ne):
+            if self._vp[2 * e] == -1 and self._vp[2 * e + 1] != -1:
+                raise error(f"half-edge {2 * e + 1} is active but its twin {2 * e} is not")
+
+        if self._vp[-2] == -1 or self._fp[-2] == -1:
+            raise error("trailing inactive edges")
 
         for h in range(2 * ne):
             if self._vp[h] != -1 and self._fp[self._ep(self._vp[h])] != h:
@@ -390,7 +394,7 @@ class OrientedMap:
             sage: OrientedMap("(0,1,~1)")._check_half_edge(1)
             Traceback (most recent call last):
             ...
-            ValueError: invalid half-edge (=1); the underlying edge is folded
+            ValueError: inactive half-edge (=1)
         """
         if not isinstance(h, numbers.Integral):
             raise TypeError(f"invalid half-edge {h} of type {type(h).__name__}")
@@ -398,7 +402,7 @@ class OrientedMap:
         if h < 0 or h >= len(self._vp):
             raise ValueError(f"half-edge number out of range (={h})")
         if self._vp[h] == -1:
-            raise ValueError(f"invalid half-edge (={h}); the underlying edge is folded")
+            raise ValueError(f"inactive half-edge (={h})")
         return h
 
     def _check_half_edge_or_negative(self, h):
@@ -406,12 +410,11 @@ class OrientedMap:
             raise TypeError(f"invalid half-edge {h} of type {type(h).__name__}")
         h = int(h)
         if h >= 0:
-            if  h >= len(self._vp):
-                raise ValueError(f"half-edge number out of range (={h})")
-            if self._vp[h] == -1:
-                raise ValueError(f"invalid half-edge (={h}); the underlying edge is folded")
+            self._check_half_edge(h)
         return h
 
+    # TODO: this does not make any sense, self._ep(h) == 0 is not testing
+    # at all that the edge is folded
     def _check_half_edge_folded(self, h):
         if not isinstance(h, numbers.Integral):
             raise TypeError(f"invalid half-edge {h} of type {type(h).__name__}")
@@ -598,8 +601,8 @@ class OrientedMap:
 
         - ``directed``, ``subdivide`` -- options forwarded to :meth:`graph`
         - ``edge_labels``: boolean specifying whether to plot the labels of the edges.
-        - ``edge_colors``: dictionnary specifying the color to assign to each edge color.
-        - ``vertex_colors``: dictionnary specifying the color to assign to each vertex color.
+        - ``edge_colors``: dictionary specifying the color to assign to each edge color.
+        - ``vertex_colors``: dictionary specifying the color to assign to each vertex color.
         """
         G, em, r, edge_list = self.graph(directed=directed, subdivide=subdivide, root=root)
         pos = G.layout_planar(on_embedding=em, external_face=r)
@@ -694,7 +697,7 @@ class OrientedMap:
             sage: s = m.copy()
             sage: s == m
             True
-            sage: s.flip(0)
+            sage: s.reverse_orientation(0)
             sage: s == m
             False
 
@@ -703,7 +706,7 @@ class OrientedMap:
             True
 
             sage: t = m.copy(mutable=True)
-            sage: t.flip(0)
+            sage: t.reverse_orientation(0)
             sage: s == t
             True
 
@@ -867,7 +870,7 @@ class OrientedMap:
             sage: m.next_in_face(1)
             Traceback (most recent call last):
             ...
-            ValueError: invalid half-edge (=1); the underlying edge is folded
+            ValueError: inactive half-edge (=1)
         """
         if check:
             h = self._check_half_edge(h)
@@ -1034,6 +1037,36 @@ class OrientedMap:
             return [[]]
         return perm_cycles(self._vp, True)
 
+    def half_edge_to_vertex(self):
+        r"""
+        Return an array whose element at index ``h`` is the index of the vertex
+        incident to the half-edge ``h``.
+
+        The indices are the ones of :meth:`vertices`: the entry at ``h`` is the
+        ``i`` for which ``h`` belongs to ``self.vertices()[i]``. Inactive
+        half-edges get the value ``-1``, and the array has one entry per
+        half-edge, so it is empty on a map without edges even though such a map
+        still has one vertex.
+
+        .. SEEALSO::
+
+            :meth:`vertices`, :meth:`half_edge_to_face`
+
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+            sage: m = OrientedMap("(0,1,2)(~0,3,4)(~1,10,~8)(~2,7,~5)(~3,5,6)(~4,15,~13)(~6,16,~15)(~7,8,9)(~9,~12,~17)(~10,11,12)(~11,13,14)(~14,~16,17)", "(0,4,~13,~11,~10,~1)(~0,2,~5,~3)(1,~8,~7,~2)(3,6,~15,~4)(5,7,9,~17,~16,~6)(8,10,12,~9)(11,14,17,~12)(13,15,16,~14)")
+            sage: m.half_edge_to_vertex()
+            array('i', [0, 1, 0, 2, 0, 3, 1, 4, 1, 5, 4, 3, 4, 6, 3, 7, 7, 2, 7, 8, 2, 9, 9, 10, 9, 8, 10, 5, 10, 11, 5, 6, 6, 11, 11, 8])
+
+        An example with inactive half-edges::
+
+            sage: m = OrientedMap(vp="(2,1,5)(~1,~2,~5)")
+            sage: m.half_edge_to_vertex()
+            array('i', [-1, -1, 0, 1, 0, 1, -1, -1, -1, -1, 0, 1])
+        """
+        return perm_dense_cycles(self._vp)
+
     # TODO: to follow sage Graph convention, we may want to use
     # def vertex_degree(self, h=None)
     # def face_degree(self, h=None)
@@ -1100,6 +1133,36 @@ class OrientedMap:
         if not self._vp:
             return [[]]
         return perm_cycles(self._fp, True)
+
+    def half_edge_to_face(self):
+        r"""
+        Return an array whose element at index ``h`` is the index of the face
+        incident to the half-edge ``h``.
+
+        The indices are the ones of :meth:`faces`: the entry at ``h`` is the
+        ``i`` for which ``h`` belongs to ``self.faces()[i]``. Inactive
+        half-edges get the value ``-1``, and the array has one entry per
+        half-edge, so it is empty on a map without edges even though such a map
+        still has one face.
+
+        .. SEEALSO::
+
+            :meth:`faces`, :meth:`half_edge_to_vertex`
+
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+            sage: m = OrientedMap("(0,1,2)(~0,3,4)(~1,10,~8)(~2,7,~5)(~3,5,6)(~4,15,~13)(~6,16,~15)(~7,8,9)(~9,~12,~17)(~10,11,12)(~11,13,14)(~14,~16,17)", "(0,4,~13,~11,~10,~1)(~0,2,~5,~3)(1,~8,~7,~2)(3,6,~15,~4)(5,7,9,~17,~16,~6)(8,10,12,~9)(11,14,17,~12)(13,15,16,~14)")
+            sage: m.half_edge_to_face()
+            array('i', [0, 1, 2, 0, 1, 2, 3, 1, 0, 3, 4, 1, 3, 4, 4, 2, 5, 2, 4, 5, 5, 0, 6, 0, 5, 6, 7, 0, 6, 7, 7, 3, 7, 4, 6, 4])
+
+        An example with inactive half-edges::
+
+            sage: m = OrientedMap(vp="(2,1,5)(~1,~2,~5)")
+            sage: m.half_edge_to_face()
+            array('i', [-1, -1, 0, 1, 1, 2, -1, -1, -1, -1, 2, 0])
+        """
+        return perm_dense_cycles(self._fp)
 
     def face_profile(self, sort=False, reverse=True):
         r"""
@@ -1246,9 +1309,9 @@ class OrientedMap:
             True
             sage: OrientedMap(fp="(0,1,2)(3,4,5)").is_connected()
             False
-            sage: OrientedMap(fp="(2,~3)(~2,4)").is_connected()
+            sage: OrientedMap(fp="(2,3)(~2,4)").is_connected()
             True
-            sage: OrientedMap(fp="(2,~3)(4,~4)").is_connected()
+            sage: OrientedMap(fp="(2,3)(4,~4)").is_connected()
             False
         """
         return perms_are_transitive((self._vp, self._fp))
@@ -1291,7 +1354,7 @@ class OrientedMap:
 
     def submap(self, edges, relabel=False, mutable=False, check=True):
         r"""
-        Return the submap of this constellation induced on ``edges``.
+        Return the submap of this map induced on ``edges``.
 
         EXAMPLES::
 
@@ -1345,7 +1408,7 @@ class OrientedMap:
                 else:
                     vp[h] = h_image
 
-        assert perm_check(vp)
+        perm_trim(vp)
         return OrientedMap(vp=vp, mutable=mutable, check=check)
 
     def connected_components_submaps(self, relabel=False, mutable=False):
@@ -1448,6 +1511,625 @@ class OrientedMap:
             # TODO: implement something less costly
             return [cc.genus() for cc in self.connected_components_submaps(relabel=True)]
 
+    def _spanning_forest(self, cycles, h2c, roots, used, name):
+        r"""
+        Return a spanning forest of the cells ``cycles``, rooted at ``roots``.
+
+        This is the common core of the forest and the coforest of
+        :meth:`forest_coforest_decomposition`: run on the vertices it builds
+        the forest and run on the faces it builds the coforest.
+
+        INPUT:
+
+        - ``cycles`` -- the cells, as the list of their half-edges indexed by
+          cell number, that is the output of :meth:`vertices` or :meth:`faces`
+
+        - ``h2c`` -- the inverse map, sending a half-edge to the index of its
+          cell, that is the output of :meth:`half_edge_to_vertex` or
+          :meth:`half_edge_to_face`
+
+        - ``roots`` -- ``None`` or the cells the trees are rooted at. A tree
+          never leaves its connected component. When ``None`` the cells that no
+          tree has reached start a new one, which gives exactly one tree per
+          connected component.
+
+        - ``used`` -- an array of flags indexed by the edges, read to skip the
+          edges already taken and written for the ones this call takes
+
+        - ``name`` -- the name of the argument ``roots`` came from, used in the
+          error messages
+
+        OUTPUT: an array of the length of ``cycles`` whose entry is ``-1`` at a
+        root, the half-edge joining a cell to its parent at a cell some tree
+        reached, and ``-2`` at a cell no tree reached
+
+        This is exercised through :meth:`forest_coforest_decomposition`.
+        """
+        vp = self._vp
+        nc = len(cycles)
+        forest = array('i', [-2] * nc)
+
+        if roots is None:
+            todo = []
+        else:
+            # one pass: validate, mark the roots and collect them. Marking as
+            # we go makes forest[c] == -1 the test for a repeat, and reading
+            # ``roots`` only once lets it be any iterable.
+            todo = []
+            for c in roots:
+                if not isinstance(c, numbers.Integral):
+                    raise TypeError(f"invalid entry {c} of type {type(c).__name__} in {name}")
+                c = int(c)
+                if c < 0 or c >= nc:
+                    raise ValueError(f"{name} must consist of integers in range({nc}), got {c}")
+                if forest[c] == -1:
+                    raise ValueError(f"{name} lists {c} twice")
+                forest[c] = -1
+                todo.append(c)
+
+        c0 = 0
+        while True:
+            while todo:
+                c = todo.pop()
+                for h in cycles[c]:
+                    if used[h // 2]:
+                        continue
+                    # a folded edge is a loop: ep(h) is h, so the cell on the
+                    # other side is the one we come from and it never extends
+                    # the forest
+                    if vp[h ^ 1] == -1:
+                        continue
+                    h = h ^ 1
+                    cc = h2c[h]
+                    if forest[cc] == -2:
+                        forest[cc] = h
+                        used[h // 2] = 1
+                        todo.append(cc)
+            if roots is not None:
+                break
+            while c0 < nc and forest[c0] != -2:
+                c0 += 1
+            if c0 == nc:
+                break
+            forest[c0] = -1
+            todo.append(c0)
+
+        return forest
+
+    def forest_coforest_decomposition(self, root_vertices=None, root_faces=None):
+        r"""
+        Return a triple ``(forest, coforest, complementary_edges)`` with the
+        given roots.
+
+        This is the analogue of :meth:`tree_cotree_decomposition` with several
+        roots: the tree is replaced by a spanning forest with one tree per root
+        vertex and the cotree by a spanning coforest with one tree per root
+        face.
+
+        INPUT:
+
+        - ``root_vertices`` -- (default: ``None``) the vertices the trees of
+          the forest are rooted at. A tree never leaves its connected
+          component, so each component must contain one of them and a
+          ``ValueError`` is raised otherwise. When ``None`` the smallest
+          vertex index of each connected component is taken as its root, which
+          gives one tree per component.
+
+        - ``root_faces`` -- (default: ``None``) the faces the trees of the
+          coforest are rooted at, with the same convention
+
+        OUTPUT: a triple ``(forest, coforest, complementary_edges)`` of arrays
+        of integers, in the format of :meth:`tree_cotree_decomposition`
+
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+            sage: m = OrientedMap(vp="(2,3,1,5,6,~5)(~1,4,~2,~6)(~3,7,~4,8)(~7,9,10,11,~9)(~8,~10,~11)")
+            sage: m.forest_coforest_decomposition((0,2,4), (1,))
+            (array('i', [-1, 8, -1, 20, -1]),
+             array('i', [2, -1, 7, 22]),
+             array('i', [2, 5, 6, 7, 8, 9]))
+
+        The empty map has one vertex and one face, both roots, and no edge::
+
+            sage: OrientedMap().forest_coforest_decomposition()
+            (array('i', [-1]), array('i', [-1]), array('i'))
+
+        Left to itself on a map that is not connected, it roots one tree per
+        component::
+
+            sage: m = OrientedMap(fp="(0,1,3)(~0,~1,~3)(2,4,5)(~2,~4,~5)")
+            sage: m.is_connected()
+            False
+            sage: m.connected_components()
+            [[0, 1, 3], [2, 4, 5]]
+            sage: forest, coforest, comp_edges = m.forest_coforest_decomposition()
+            sage: forest
+            array('i', [-1, -1])
+            sage: coforest
+            array('i', [-1, 1, -1, 5])
+
+        the root of each tree being the smallest index it contains::
+
+            sage: [v for v, x in enumerate(forest) if x == -1]
+            [0, 1]
+            sage: [f for f, x in enumerate(coforest) if x == -1]
+            [0, 2]
+
+        Given roots that miss a component, it says so rather than leaving a
+        vertex or a face out::
+
+            sage: m.forest_coforest_decomposition((0,), (0, 2))
+            Traceback (most recent call last):
+            ...
+            ValueError: root_vertices must contain a vertex of each connected component
+            sage: m.forest_coforest_decomposition((0, 1), (0,))
+            Traceback (most recent call last):
+            ...
+            ValueError: root_faces must contain a face of each connected component
+        """
+        used = array('i', [0] * (len(self._vp) // 2))
+
+        # the forest on the vertices, then the coforest the same way on the
+        # faces of the dual. The two share ``used``, so that the coforest only
+        # gets to pick among the edges the forest left.
+        forest = self._spanning_forest(self.vertices(), self.half_edge_to_vertex(),
+                                       root_vertices, used, "root_vertices")
+        coforest = self._spanning_forest(self.faces(), self.half_edge_to_face(),
+                                         root_faces, used, "root_faces")
+
+        # a vertex left at -2 was reached by no tree, that is its component
+        # holds no root vertex; likewise for the faces
+        if -2 in forest:
+            raise ValueError("root_vertices must contain a vertex of each connected component")
+        if -2 in coforest:
+            raise ValueError("root_faces must contain a face of each connected component")
+
+        return (forest, coforest, array('i', [e for e in self.edge_indices() if not used[e]]))
+
+    def tree_cotree_decomposition(self, root_vertex=0, root_face=0):
+        r"""
+        Return a tree cotree decomposition as a triple ``(tree, cotree, complementary_edges)``.
+
+        INPUT:
+
+        - ``root_vertex`` -- (default: ``0``) the vertex the tree is rooted at
+
+        - ``root_face`` -- (default: ``0``) the face the cotree is rooted at
+
+        OUTPUT: a triple ``(tree, cotree, complementary_edges)`` of arrays of
+        integers. The ``tree`` and ``cotree`` have length respectively the
+        number of vertices and the number of faces in the map. We describe
+        ``tree`` below and the ``cotree`` is similar.
+
+        - ``tree[root_vertex]`` is ``-1``
+        - for a non-root vertex ``v``, ``tree[v]`` is a half-edge adjacent to ``v`` and
+          going out from the root.
+
+        The last entry ``complementary_edges`` is the array of edge indices that
+        are neither part of the tree nor the cotree.
+
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+            sage: m = OrientedMap(vp="(2,3,1,5,6,~5)(~1,4,~2,~6)(~3,~4)")
+            sage: tree, cotree, comp_edges = m.tree_cotree_decomposition()
+            sage: tree
+            array('i', [-1, 3, 7])
+            sage: cotree
+            array('i', [-1, 9, 4])
+            sage: comp_edges
+            array('i', [5, 6])
+
+        To obtain the edges used in the tree and cotree respectively, one can
+        do it as follows (and check that we indeed obtain a partition of
+        edges)::
+
+            sage: tree_edges = [h // 2 for h in tree if h != -1]
+            sage: tree_edges
+            [1, 3]
+            sage: cotree_edges = [h // 2 for h in cotree if h != -1]
+            sage: cotree_edges
+            [4, 2]
+
+        A single tree can not span a map that is not connected::
+
+            sage: m = OrientedMap(fp="(0,1,3)(~0,~1,~3)(2,4,5)(~2,~4,~5)")
+            sage: m.tree_cotree_decomposition()
+            Traceback (most recent call last):
+            ...
+            ValueError: a tree cotree decomposition requires a connected map
+            sage: m.forest_coforest_decomposition()[0]
+            array('i', [-1, -1])
+
+        .. SEEALSO::
+
+            :meth:`forest_coforest_decomposition`
+        """
+        if not self.is_connected():
+            raise ValueError("a tree cotree decomposition requires a connected map")
+
+        return self.forest_coforest_decomposition((root_vertex,), (root_face,))
+
+    def radial_map(self, mapping=False, mutable=False):
+        r"""
+        Return the radial map of this map.
+
+        The *radial map* of an oriented map is the bipartite quadrangulation
+        obtained by adding a vertex in the center of each face, joining this
+        added vertex to every corner in the face and removing the original
+        edges. The vertices of the radial map are in bijection with the union
+        of vertices and faces of the original map. It has as many quadrilateral
+        faces as edges in the original map.
+
+        The convention used for labelling is that the half-edge of the radial
+        map to the left of `h` in the original map is labelled `2h`. That way,
+        vertices of the radial map are either cycles of positively oriented
+        edges or cycles of negatively oriented edges. In particular, the
+        bipartition of vertices is visible on the labelling.
+
+        INPUT:
+
+        - ``mapping`` -- boolean (default: ``False``); whether to also return
+          the list of the images of the half-edges. The image of a half-edge is
+          the walk of length two it becomes in the radial map, and the image of
+          ``ep(h)`` is the reverse of the image of ``h``.
+
+        - ``mutable`` -- boolean (default: ``False``); whether the result is
+          mutable
+
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+            sage: m = OrientedMap(vp="(0,1,~0,2)(~1,~2)")
+            sage: m.radial_map()
+            OrientedMap("(0,2,1,4)(~0,~2,~5,~1,~4,~3)(3,5)", "(0,~3,5,~2)(~0,4,~1,2)(1,~5,3,~4)")
+
+        An example with inactive half edges::
+
+            sage: m = OrientedMap(vp="(0,3,6,~3)(~0,1,~6,~1)")
+            sage: m.radial_map()
+            OrientedMap("(0,6,12,7)(~0,~3,~1,~7)(1,2,13,3)(~2,~13,~6,~12)", "(0,~7,12,~6)(~0,7,~1,3)(1,~3,13,~2)(2,~12,6,~13)")
+
+        With ``mapping``, the images of the half-edges are returned as well::
+
+            sage: m = OrientedMap(vp="(0,1,~0,2)(~1,~2)")
+            sage: radial, mor = m.radial_map(mapping=True)
+            sage: mor
+            [array('i', [0, 5]),
+             array('i', [4, 1]),
+             array('i', [4, 11]),
+             array('i', [10, 5]),
+             array('i', [8, 7]),
+             array('i', [6, 9])]
+            sage: all(list(mor[h ^^ 1]) == [mor[h][1] ^^ 1, mor[h][0] ^^ 1]
+            ....:     for h in m.half_edges())
+            True
+
+        Inactive half-edges have no image::
+
+            sage: m = OrientedMap(vp="(0,3,6,~3)(~0,1,~6,~1)")
+            sage: m.radial_map(mapping=True)[1]
+            [array('i', [0, 7]),
+             array('i', [6, 1]),
+             array('i', [4, 27]),
+             array('i', [26, 5]),
+             None,
+             None,
+             array('i', [12, 25]),
+             array('i', [24, 13]),
+             None,
+             None,
+             None,
+             None,
+             array('i', [24, 5]),
+             array('i', [4, 25])]
+
+        The result is immutable unless ``mutable`` is set::
+
+            sage: m = OrientedMap(vp="(0,1,~0,2)(~1,~2)")
+            sage: m.radial_map().is_mutable()
+            False
+            sage: m.radial_map(mutable=True).is_mutable()
+            True
+
+        Raises a ``NotImplementedError`` on maps with folded edge::
+
+            sage: OrientedMap("(0)").radial_map()
+            Traceback (most recent call last):
+            ...
+            NotImplementedError: radial_map is not implemented on a map with a folded edge
+        """
+        if self.has_folded_edge():
+            raise NotImplementedError("radial_map is not implemented on a map with a folded edge")
+        n = len(self._vp)
+        rvp = array('i', [-1] * (2 * n))
+        rfp = array('i', [-1] * (2 * n))
+        for h in range(n):
+            if self._vp[h] == -1:
+                continue
+            rvp[2 * h] = 2 * self._vp[h]
+            rvp[2 * h + 1] = 2 * self._fp[h] + 1
+            rfp[2 * self._fp[h]] = 2 * h + 1
+            rfp[2 * (h ^ 1) + 1] = 2 * self._fp[h]
+        radial = OrientedMap(vp=rvp, fp=rfp, mutable=mutable)
+
+        if not mapping:
+            return radial
+
+        mor = [None] * n
+        for e in range(n // 2):
+            h = 2 * e
+            if self._vp[h] == -1:
+                continue
+            mor[h] = array('i', [2 * h, 2 * self._fp[h] + 1])
+            mor[h + 1] = array('i', [2 * self._fp[h], 2 * h + 1])
+        return radial, mor
+
+    def quad_system(self, forest=None, coforest=None, relabel=False, mapping=False, mutable=False, check=True):
+        r"""
+        Return the quad system of this map for the given forest and coforest.
+
+        The quad system is obtained from the radial map by contracting the
+        edges of ``forest`` and deleting the edges of ``coforest``, each of
+        which amounts to folding the two corners of the corresponding
+        quadrilateral, see :meth:`fold_corner`. When ``forest`` and
+        ``coforest`` are spanning, the result is a quadrangulation of the same
+        surface with two vertices of degree `4g`, `4g` edges and `2g`
+        quadrilateral faces.
+
+        INPUT:
+
+        - ``forest``, ``coforest`` -- (default: ``None``) the half-edges of the
+          edges to contract and to delete, in the format returned by
+          :meth:`forest_coforest_decomposition`; entries equal to ``-1`` are
+          ignored. When both are ``None`` a decomposition is computed. Listing
+          the same edge twice raises a ``ValueError``.
+
+        - ``relabel`` -- boolean (default: ``False``); whether to relabel the
+          result on ``0, 1, ..., 2 * ne - 1`` so that it has no inactive
+          half-edge. Folding never renumbers, so without this the labels of the
+          radial map are kept and are sparse. The relabelling goes edge by edge
+          and preserves the parity of each half-edge inside its edge, so that
+          the bipartition of the vertices stays visible on the labels.
+
+        - ``mapping`` -- boolean (default: ``False``); whether to also return
+          the projection, a list indexed by the half-edges of this map giving
+          for each of them the walk of length zero or two it becomes in the
+          quad system
+
+        - ``mutable`` -- boolean (default: ``False``); whether the result is
+          mutable
+
+        - ``check`` -- boolean (default: ``True``); whether to check that the
+          half-edges of ``forest`` and ``coforest`` are ones of this map, and
+          whether to check the map built when ``relabel`` is set. Listing the
+          same edge twice is reported whatever its value, being caught by the
+          bookkeeping rather than by a check.
+
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+            sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
+            sage: m.genus()
+            2
+            sage: q = m.quad_system()
+            sage: q.num_vertices(), q.num_edges(), q.num_faces()
+            (2, 8, 4)
+            sage: q.vertex_profile()
+            [8, 8]
+            sage: q.face_profile()
+            [4, 4, 4, 4]
+
+        The projection is the mapping of :meth:`radial_map` followed by the
+        folds. It sends a half-edge to a walk of length zero or two, the
+        length being zero exactly when the folds identify the two half-edges
+        of its image in the radial map. That is always the case for a
+        half-edge of a contracted edge and for a half-edge of a monogon face,
+        and it happens for some half-edges of deleted edges as well. The walk
+        of ``ep(h)`` is the reverse of the walk of ``h``::
+
+            sage: q, proj = m.quad_system(mapping=True)
+            sage: sorted(set(len(p) for p in proj if p is not None))
+            [0, 2]
+            sage: all(list(proj[h ^^ 1]) == [proj[h][1] ^^ 1, proj[h][0] ^^ 1]
+            ....:     for h in m.half_edges() if proj[h])
+            True
+
+        A half-edge of a deleted edge may have empty image too::
+
+            sage: mm = OrientedMap("(0,~2,4,~1,~0,3)(1,~4)(2,~3)", "(0,~1,~4,~2,~3,~0,3,2)(1,4)")
+            sage: forest, coforest, _ = mm.forest_coforest_decomposition()
+            sage: [h // 2 for h in coforest if h != -1]
+            [1]
+            sage: q, proj = mm.quad_system(forest, coforest, mapping=True)
+            sage: proj[2], proj[3]
+            (array('i'), array('i'))
+
+        Folding never renumbers, so the labels of the radial map are kept and
+        are sparse; ``relabel`` compacts them, the projection included::
+
+            sage: list(m.quad_system().half_edges())
+            [0, 1, 2, 3, 6, 7, 8, 9, 10, 11, 20, 21, 22, 23, 26, 27]
+            sage: list(m.quad_system(relabel=True).half_edges())
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+            sage: q, proj = m.quad_system(relabel=True, mapping=True)
+            sage: all(x in list(q.half_edges()) for p in proj for x in p)
+            True
+
+        .. SEEALSO::
+
+            :meth:`radial_map`, :meth:`fold_corner`,
+            :meth:`forest_coforest_decomposition`
+
+        ALGORITHM:
+
+        The folds are performed on a copy of the radial map, in which the edge
+        ``e`` of this map is a quadrilateral face whose four sides alternate
+        parity, the parity of a half-edge of the radial map being the side of
+        the bipartition its tail belongs to. Contracting ``e`` folds the two
+        even sides of that quadrilateral and deleting ``e`` folds the two odd
+        ones.
+
+        Folding relabels: :meth:`fold_corner` at ``a`` reads ``b = fp[a]`` and
+        makes ``b`` take over the position of ``a ^ 1``. So the sides computed
+        on the initial radial map may be dead by the time they are needed. To
+        avoid resolving names on the fly we keep, for each edge ``e``, one live
+        half-edge ``handle[e]`` lying on its quadrilateral together with the
+        inverse map ``owner``. The four sides are then recovered in constant
+        time by walking the face of the handle, and the two of the wanted
+        parity can both be read before folding, since two half-edges of equal
+        parity are never opposite to each other. A handle dies only as the
+        ``a`` or the ``a ^ 1`` of a fold: in the first case its quadrilateral
+        is the one being collapsed, that is the edge currently processed, and
+        in the second case ``b`` is its replacement.
+
+        The projection, on the other hand, is only read once every fold has
+        been performed. The dying half-edges are linked to the ones they are
+        identified with and a single pass with path compression resolves the
+        whole forest of links at the end, so that the method is linear.
+        """
+        if self.has_folded_edge():
+            raise NotImplementedError("quad_system is not implemented on a map with a folded edge")
+
+        if forest is None and coforest is None:
+            forest, coforest, _ = self.forest_coforest_decomposition()
+        elif forest is None or coforest is None:
+            raise ValueError("forest and coforest must be given together")
+
+        vp = self._vp
+        n = len(vp)
+
+        quad = self.radial_map(mapping=mapping, mutable=True)
+        if mapping:
+            quad, mor = quad
+        qfp = quad.face_permutation(copy=False)
+
+        # handle[e] is a live half-edge of quad lying on the quadrilateral of
+        # the edge e of this map and owner is its inverse; this is what keeps
+        # track of where each quadrilateral went as folding relabels half-edges
+        handle = array('i', [-1] * (n // 2))
+        owner = array('i', [-1] * (2 * n))
+        for e in range(n // 2):
+            if vp[2 * e] != -1:
+                handle[e] = 4 * e + 1
+                owner[4 * e + 1] = e
+
+        # the half-edges of the radial map that die get linked to the ones they
+        # are identified with; only the projection needs them
+        link = array('i', [-1] * (2 * n)) if mapping else None
+
+        for parity, edges in ((0, forest), (1, coforest)):
+            for h in edges:
+                if h == -1:
+                    continue
+                if check:
+                    h = self._check_half_edge(h)
+                x = handle[h // 2]
+                if x == -1:
+                    raise ValueError(f"the edge of the half-edge {h} is listed twice")
+                # the handle is dropped before folding: the two fold arguments
+                # are all that is needed from this quadrilateral, and a handle
+                # left behind would turn into a stale owner entry that a later
+                # fold could use to overwrite a live one
+                handle[h // 2] = owner[x] = -1
+
+                # the four sides alternate parity; contracting folds the two
+                # even ones and deleting the two odd ones. Two half-edges of
+                # equal parity are never opposite, so the first fold does not
+                # invalidate the second argument.
+                a0 = a1 = -1
+                for _ in range(4):
+                    if x & 1 == parity:
+                        if a0 == -1:
+                            a0 = x
+                        else:
+                            a1 = x
+                    x = qfp[x]
+
+                # the checks of fold_corner cannot fire here, so skip them:
+                # quad is mutable, a is live, and no neighbour ever lies on a
+                # folded edge. Every face of the radial map has degree four and
+                # a fold takes two from a face, so no face ever reaches degree
+                # one and the monogon branch, the only one that folds an edge
+                # onto itself, is never taken.
+                for a in (a0, a1):
+                    b = qfp[a]
+                    quad.fold_corner(a, check=0)
+                    if b == a ^ 1:
+                        # the edge of a bounded its face on both sides and got
+                        # pruned, so nothing survives it and there is nothing
+                        # to link. This ends the last quadrilateral of a map of
+                        # genus zero.
+                        owner[a] = owner[a ^ 1] = -1
+                        continue
+                    # b takes over the position of a ^ 1, hence lies on the
+                    # same face
+                    f = owner[a ^ 1]
+                    if f != -1:
+                        handle[f] = b
+                        owner[b] = f
+                    owner[a] = owner[a ^ 1] = -1
+                    if mapping:
+                        link[a] = b ^ 1
+                        link[a ^ 1] = b
+
+        if mapping:
+            # every link is final here, so a single pass with path compression
+            # resolves them all, each slot being compressed at most once
+            stack = []
+            for x in range(2 * n):
+                if link[x] == -1:
+                    continue
+                y = x
+                while link[y] != -1:
+                    stack.append(y)
+                    y = link[y]
+                while stack:
+                    link[stack.pop()] = y
+
+        relabelling = None
+        if relabel:
+            qvp = quad.vertex_permutation(copy=False)
+            qfp = quad.face_permutation(copy=False)
+            nq = len(qvp)
+            relabelling = array('i', [-1] * nq)
+            ne = 0
+            for y in range(0, nq, 2):
+                if qvp[y] != -1:
+                    relabelling[y] = 2 * ne
+                    relabelling[y + 1] = 2 * ne + 1
+                    ne += 1
+            fp_new = array('i', [-1] * (2 * ne))
+            for y in range(nq):
+                if qfp[y] != -1:
+                    fp_new[relabelling[y]] = relabelling[qfp[y]]
+            quad = OrientedMap(fp=fp_new, mutable=True, check=check)
+
+        if not mutable:
+            quad.set_immutable()
+
+        if not mapping:
+            return quad
+
+        proj = []
+        for h in range(n):
+            if vp[h] == -1:
+                proj.append(None)
+                continue
+            a = mor[h][0]
+            b = mor[h][1]
+            if link[a] != -1:
+                a = link[a]
+            if link[b] != -1:
+                b = link[b]
+            if b == a ^ 1:
+                proj.append(array('i', []))
+            elif relabelling is None:
+                proj.append(array('i', [a, b]))
+            else:
+                proj.append(array('i', [relabelling[a], relabelling[b]]))
+        return quad, proj
 
     #############
     # Mutations #
@@ -1500,6 +2182,249 @@ class OrientedMap:
 
         vp[h0], vp[h1] = vp[h1], vp[h0]
         fp[fp0_pre], fp[fp1_pre] = fp[fp1_pre], fp[fp0_pre]"""
+
+    def fold_corner(self, h, check=2):
+        r"""
+        Fold the half-edge ``h`` onto the next half-edge in its face.
+
+        This operation consists in merging the head of ``next_in_face(h)`` with
+        the tail of ``h``, which identifies ``h`` with ``ep(next_in_face(h))``
+        and ``ep(h)`` with ``next_in_face(h)``. Unless the face of ``h`` is a
+        monogon (see below), the resulting map has one edge less and the face
+        of ``h`` loses two from its degree. By convention it is the edge of
+        ``h`` that disappears.
+
+        That identification rule settles the two degenerate corners as well.
+        First, when ``next_in_face(h)`` is ``ep(h)``, both identifications read
+        ``h`` with ``h`` and nothing is glued: the edge is pruned (via a call
+        to :meth:`delete_edge`). Secondly, when ``next_in_face(h)`` is ``h``
+        itself, that is when the face of ``h`` is a monogon, ``h`` is
+        identified with ``ep(h)`` and the edge becomes a folded edge. This is
+        the one case in which the edge of ``h`` survives the fold.
+
+        Neither the edge of ``h`` nor that of ``next_in_face(h)`` may be
+        folded on entry: a ``NotImplementedError`` is raised when one of them
+        is. The edge of ``h`` may well become folded by the fold itself,
+        through the monogon case above.
+
+        INPUT:
+
+        - ``h`` -- a half-edge, the one whose edge is folded away
+
+        - ``check`` -- integer (default: ``2``); the level of checks to
+          perform. Level ``1`` checks that the map is mutable, that ``h`` is
+          one of its half-edges and that no folded edge is involved; level
+          ``0`` performs none of that and assumes the caller has done it. No
+          check is specific to level ``2`` here, which elsewhere in this class
+          guards the expensive ones, as in :meth:`genus` and :meth:`relabel`.
+
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+
+        The edge of ``h`` disappears and its face loses two from its degree::
+
+            sage: m = OrientedMap(fp="(0,1,~0,~1)", mutable=True)
+            sage: m.num_edges(), m.face_profile()
+            (2, [4])
+            sage: m.fold_corner(0)
+            sage: m
+            OrientedMap("(1)(~1)", "(1,~1)")
+            sage: m.num_edges(), m.face_profile()
+            (1, [2])
+
+        When ``next_in_face(h)`` is ``ep(h)``, that is when the head of ``h``
+        has degree one, the edge is pruned::
+
+            sage: m = OrientedMap("(0)(~0)", mutable=True)
+            sage: m
+            OrientedMap("(0)(~0)", "(0,~0)")
+            sage: m.fold_corner(0)
+            sage: m
+            OrientedMap("", "")
+
+        When the face of ``h`` is a monogon the edge is glued to itself and
+        stays on as a folded edge::
+
+            sage: m = OrientedMap("(0,~0)", mutable=True)
+            sage: m.face_profile()
+            [1, 1]
+            sage: m.fold_corner(0)
+            sage: m
+            OrientedMap("(0)", "(0)")
+            sage: m.num_folded_edges()
+            1
+
+        .. SEEALSO::
+
+            :meth:`fold_half_edge`, :meth:`delete_edge`
+        """
+        if check >= 1:
+            self._assert_mutable()
+            h = self._check_half_edge(h)
+
+        vp = self._vp
+        fp = self._fp
+
+        a = h
+        a1 = a ^ 1
+        b = fp[a]
+        b1 = b ^ 1
+        if check >= 1 and (vp[a1] == -1 or vp[b1] == -1):
+            raise NotImplementedError("fold_corner is not implemented when the edge of h "
+                                      "or that of next_in_face(h) is folded")
+        if b == a:
+            # the face of a is a monogon and the rule identifies a with ep(a),
+            # gluing the edge to itself rather than removing it
+            self.fold_half_edge(a, check=0)
+            return
+        if b == a1:
+            # a is a leaf half-edge: its head is a vertex of degree one and the
+            # corner is bounded by the edge of a on both sides. Folding it
+            # prunes that edge, which still takes two from the face of a.
+            self.delete_edge(a // 2, check=0)
+            return
+
+        # a and b leave the boundary of their face; a is identified with b1 and
+        # a1 with b, so that the edge of a disappears. Everything is read
+        # before anything is written.
+        pa = self._ep(vp[a])          # the position before a in its face
+        pa1 = self._ep(vp[a1])        # the position before a1 in its face
+        na1 = fp[a1]                  # the position after a1 in its face
+        nb = fp[b]                    # the position after b in its face
+
+        # b takes over the position of a1
+        val = nb if na1 == a else na1
+        if val == a1:
+            val = b
+        fp[b] = val
+        vp[val] = b ^ 1
+
+        # what came before a1 now comes before b
+        if pa1 != a and pa1 != a1 and pa1 != b:
+            fp[pa1] = b
+            vp[b] = self._ep(pa1)
+
+        # the face of a closes over the positions of a and b
+        if nb != a and pa != a and pa != a1:
+            val = b if nb == a1 else nb
+            fp[pa] = val
+            vp[val] = self._ep(pa)
+
+        vp[a] = vp[a1] = fp[a] = fp[a1] = -1
+
+        self._clear_trailing_edges()
+
+    def fold_half_edge(self, h, check=2):
+        r"""
+        Fold the half-edge ``h`` onto its reverse.
+
+        The half-edge ``h`` is identified with ``ep(h)`` so that the edge
+        becomes a folded edge, of which only ``2 * (h // 2)`` stays active.
+        The position of ``h`` disappears from its face, the surviving
+        half-edge takes over the position of ``ep(h)``, and the two ends of
+        the edge are merged.
+
+        The result depends on ``h`` and not only on its edge: folding ``h``
+        and folding ``ep(h)`` give different maps in general, which is why
+        this operation takes a half-edge where :meth:`contract_edge` and
+        :meth:`delete_edge` take an edge.
+
+        A ``ValueError`` is raised if the edge of ``h`` is already folded.
+
+        INPUT:
+
+        - ``h`` -- a half-edge, whose position in its face disappears
+
+        - ``check`` -- integer (default: ``2``); the level of checks to
+          perform. Level ``1`` checks that the map is mutable, that ``h`` is
+          one of its half-edges and that its edge is not already folded; level
+          ``0`` performs none of that and assumes the caller has done it. No
+          check is specific to level ``2`` here, which elsewhere in this class
+          guards the expensive ones, as in :meth:`genus` and :meth:`relabel`.
+
+        EXAMPLES::
+
+            sage: from combisurf import OrientedMap
+
+            sage: t = OrientedMap(vp="(0,1,2)(~0,~1,~2)", mutable=True)
+            sage: t.num_folded_edges()
+            0
+            sage: t.fold_half_edge(0)
+            sage: t
+            OrientedMap("(0,~1,~2,1,2)", "(0,2,~1,~2,1)")
+            sage: t.num_folded_edges()
+            1
+
+        Folding the other half-edge of the same edge gives a different map::
+
+            sage: t0 = OrientedMap(vp="(0,~0,1,~1)", mutable=True)
+            sage: t0.fold_half_edge(0)
+            sage: t0
+            OrientedMap("(0,1,~1)", "(0,~1)(1)")
+            sage: t1 = OrientedMap(vp="(0,~0,1,~1)", mutable=True)
+            sage: t1.fold_half_edge(1)
+            sage: t1
+            OrientedMap("(0)(1,~1)", "(0)(1)(~1)")
+
+        The two ends of the edge are merged, and the Euler characteristic is
+        preserved because a folded edge carries a vertex of its own::
+
+            sage: t.num_vertices()
+            1
+            sage: OrientedMap(vp="(0,1,2)(~0,~1,~2)").euler_characteristic()
+            0
+            sage: t.euler_characteristic()
+            0
+
+        .. SEEALSO::
+
+            :meth:`fold_corner`
+        """
+        if check >= 1:
+            self._assert_mutable()
+            h = self._check_half_edge(h)
+
+        vp = self._vp
+        fp = self._fp
+
+        if check >= 1 and vp[h ^ 1] == -1:
+            raise ValueError(f"the edge of the half-edge {h} is already folded")
+
+        s = h & ~1                    # survives, the even half-edge
+        d = h | 1                     # dies
+
+        # h leaves the boundary of its face and is identified with its reverse.
+        # Everything is read before anything is written. Note that the edge of
+        # s is folded in the result, so that ep(s) is s.
+        ph = self._ep(vp[h])          # the position before h in its face
+        ph1 = self._ep(vp[h ^ 1])     # the position before h ^ 1 in its face
+        nh = fp[h]                    # the position after h in its face
+        nh1 = fp[h ^ 1]               # the position after h ^ 1 in its face
+
+        # s takes over the position of h ^ 1
+        val = nh if nh1 == h else nh1
+        if val == d:
+            val = s
+        fp[s] = val
+        vp[val] = s
+
+        # what came before h ^ 1 now comes before s
+        if s == h and ph1 != h and ph1 != d:
+            fp[ph1] = s
+            vp[s] = self._ep(ph1)
+
+        # the face of h closes over the position of h
+        if ph != h and ph != d:
+            val = s if nh == d else nh
+            fp[ph] = val
+            # ep(s) is s in the result, but vp[d] is only cleared below, so
+            # _ep does not see the fold yet and ph == s is settled by hand
+            vp[val] = s if ph == s else self._ep(ph)
+
+        vp[d] = fp[d] = -1
+
+        self._clear_trailing_edges()
 
     def contract_edge(self, e, check=2):
         r"""
@@ -1659,11 +2584,7 @@ class OrientedMap:
 
             vp[h0] = vp[h1] = fp[h0] = fp[h1] = -1
 
-        while vp and vp[-2] == -1:
-            vp.pop()
-            vp.pop()
-            fp.pop()
-            fp.pop()
+        self._clear_trailing_edges()
 
     def delete_edge(self, e, check=2):
         r"""
@@ -1673,39 +2594,50 @@ class OrientedMap:
 
             sage: from combisurf import OrientedMap
 
+        In each of the examples below, the edge ``2`` is attached to the map
+
             sage: vp = "(0,1,~0,~1)"
             sage: fp = "(0,1,~0,~1)"
             sage: m = OrientedMap(vp, fp)
+            sage: m
+            OrientedMap("(0,1,~0,~1)", "(0,1,~0,~1)")
+
+        in a different configuration, and deleting it gives that map back::
 
             sage: vp20 = "(0,~2,2,1,~0,~1)"
             sage: fp20 = "(0,1,~0,~1,2)(~2)"
             sage: m = OrientedMap(vp20, fp20, mutable=True)
             sage: m.delete_edge(2)
             sage: m
+            OrientedMap("(0,1,~0,~1)", "(0,1,~0,~1)")
 
             sage: vp10 = "(0,2,1,~2,~0,~1)"
             sage: fp10 = "(0,~2)(~0,~1,2,1)"
             sage: m = OrientedMap(vp10, fp10, mutable=True)
             sage: m.delete_edge(2)
             sage: m
+            OrientedMap("(0,1,~0,~1)", "(0,1,~0,~1)")
 
             sage: vp30 = "(0,2,1,~0,~2,~1)"
             sage: fp30 = "(0,1,~2)(~0,~1,2)"
             sage: m = OrientedMap(vp30, fp30, mutable=True)
             sage: m.delete_edge(2)
             sage: m
+            OrientedMap("(0,1,~0,~1)", "(0,1,~0,~1)")
 
             sage: vp00 = "(0,~2,2,1,~0,~1)"
             sage: fp00 = "(0,1,~0,~1,2)(~2)"
             sage: m = OrientedMap(vp00, fp00, mutable=True)
             sage: m.delete_edge(2)
             sage: m
+            OrientedMap("(0,1,~0,~1)", "(0,1,~0,~1)")
 
             sage: vp22 = "(0,1,~2,2,~0,~1)"
             sage: fp22 = "(0,2,1,~0,~1)(~2)"
-            sage: m = OrientedMap(vp00, fp00, mutable=True)
+            sage: m = OrientedMap(vp22, fp22, mutable=True)
             sage: m.delete_edge(2)
             sage: m
+            OrientedMap("(0,1,~0,~1)", "(0,1,~0,~1)")
         """
         if check >= 1:
             self._assert_mutable()
@@ -1777,11 +2709,7 @@ class OrientedMap:
 
             vp[h0] = vp[h1] = fp[h0] = fp[h1] = -1
 
-        while vp and vp[-2] == -1:
-            vp.pop()
-            vp.pop()
-            fp.pop()
-            fp.pop()
+        self._clear_trailing_edges()
 
     def add_edge(self, h0=-1, h1=-1, e=None, check=2):
         r"""
@@ -1918,7 +2846,7 @@ class OrientedMap:
             sage: m = OrientedMap(fp="(0,1,~0,~1)", mutable=True)
             sage: m.insert_edge(0, 1)
             sage: m
-            OrientedMap("(0,1,2,~0,~1,~2)", "(0,2,~1)(~0,~2,1)")
+            OrientedMap("(0,1,~2)(~0,~1,2)", "(0,2,1,~0,~2,~1)")
 
             sage: G = OrientedMap(vp = [[0, 2], [1, 4], [3, 5]], mutable=True)
             sage: G_dual = G.dual()
@@ -2086,8 +3014,10 @@ class OrientedMap:
             sage: m =OrientedMap("(0,5,3,~3)(~0)", "(0,~0,~3,5)(3)", mutable=True)
             sage: m.relabel("(0,~0)")
             sage: m
+            OrientedMap("(0)(~0,5,3,~3)", "(0,~3,5,~0)(3)")
             sage: m.relabel("(0,1,~2)(~0,~1,2)")
             sage: m
+            OrientedMap("(1)(~1,5,3,~3)", "(1,~3,5,~1)(3)")
 
             sage: m.set_immutable()
             sage: m.relabel("(0,~1)")
@@ -2121,8 +3051,8 @@ class OrientedMap:
 
         self._vp = perm_conjugate(self._vp, p)
         self._fp = perm_conjugate(self._fp, p)
-        remove_trailing_minus_ones(self._vp)
-        remove_trailing_minus_ones(self._fp)
+
+        self._clear_trailing_edges()
 
     # TODO: should we make it possible to choose the triangulation? Right now
     # we just pick the dual to a path.
@@ -2167,7 +3097,7 @@ class OrientedMap:
             sage: m.triangulate(0)
             Traceback (most recent call last):
             ...
-            ValueError: immutable graph; make a mutable copy first
+            ValueError: immutable map; use a mutable copy instead
         """
         self._assert_mutable()
 
@@ -2197,33 +3127,33 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from veerer import *
+            sage: from veerer import *  # not tested
 
         Veering triangulation example::
 
-            sage: vt = VeeringTriangulation("(0,1,2)(3,4,~0)(5,6,~1)(7,~2,8)(9,~3,~6)(10,~7,~4)(11,~5,12)(13,14,~8)(15,~9,16)(17,18,~10)(19,~17,~11)(20,~13,~12)(21,~14,~18)(22,~21,~15)(23,24,~16)(25,~23,~19)(26,~20,~25)(~26,~24,~22)", "RBBRBRBRRBRBBRBBRRBRRRBBRRB")
-            sage: len(vt.automorphisms())
+            sage: vt = VeeringTriangulation("(0,1,2)(3,4,~0)(5,6,~1)(7,~2,8)(9,~3,~6)(10,~7,~4)(11,~5,12)(13,14,~8)(15,~9,16)(17,18,~10)(19,~17,~11)(20,~13,~12)(21,~14,~18)(22,~21,~15)(23,24,~16)(25,~23,~19)(26,~20,~25)(~26,~24,~22)", "RBBRBRBRRBRBBRBBRRBRRRBBRRB")  # not tested
+            sage: len(vt.automorphisms())  # not tested
             2
-            sage: qvt = vt.automorphism_quotient()
-            sage: qvt
+            sage: qvt = vt.automorphism_quotient()  # not tested
+            sage: qvt  # not tested
             VeeringTriangulation("(0,1,2)(~0,3,4)(~1,5,6)(~2,8,7)(~3,~6,9)(~4,10,~7)(~5,12,11)(~8,13,~12)(~10,14,~11)", "RBBRBRBRRBRBBRR")
-            sage: (vt.stratum(), qvt.stratum())  # optional - surface_dynamics
+            sage: (vt.stratum(), qvt.stratum())  # not tested
             (H_4(2^3), Q_1(1^3, -1^3))
 
-            sage: vt.automorphism_quotient(mapping=True)
+            sage: vt.automorphism_quotient(mapping=True)  # not tested
             (VeeringTriangulation("(0,1,2)(~0,3,4)(~1,5,6)(~2,8,7)(~3,~6,9)(~4,10,~7)(~5,12,11)(~8,13,~12)(~10,14,~11)", "RBBRBRBRRBRBBRR"),
              array('i', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 18, 20, 21, 22, 23, 24, 25, 26, 26, 25, 24, 13, 12, 7, 6, 28, 28, 23, 22, 21, 20, 17, 16, 11, 10, 3, 2, 8, 9, 1, 0, 15, 14, 5, 4]))
 
         Strebel graph example::
 
-            sage: sg = StrebelGraph("(0,~0,~1)(1,2,~2)")
-            sage: sg.automorphism_quotient()
+            sage: sg = StrebelGraph("(0,~0,~1)(1,2,~2)")  # not tested
+            sage: sg.automorphism_quotient()  # not tested
             StrebelGraph("(0,~0,1)")
 
         TESTS::
 
-            sage: vt = VeeringTriangulation("(~0,1,2)(~1,3,4)(~2,5,6)(~3,7,8)(~4,~7,9)(~6,10,11)(~8,12,13)(~9,14,15)(~10,16,17)(~11,18,~17)(~12,19,~18)(~14,20,~16)(0:1)(~5:1)(~13:1)(~15:1)(~19:1)(~20:1)", "RBBBRRBRBBRRBRBRBBBRR")
-            sage: vt.automorphism_quotient()
+            sage: vt = VeeringTriangulation("(~0,1,2)(~1,3,4)(~2,5,6)(~3,7,8)(~4,~7,9)(~6,10,11)(~8,12,13)(~9,14,15)(~10,16,17)(~11,18,~17)(~12,19,~18)(~14,20,~16)(0:1)(~5:1)(~13:1)(~15:1)(~19:1)(~20:1)", "RBBBRRBRBBRRBRBRBBBRR")  # not tested
+            sage: vt.automorphism_quotient()  # not tested
             VeeringTriangulation("(~0,1,2)(~1,3,4)(~2,5,6)(~3,7,8)(~4,~7,~6)(~8,9,10)(0:1)(~5:1)(~10:1)", "RBBBRRBRBBR")
         """
         return self.quotient(perms_orbits(self.automorphisms()), mapping, mutable, check)
@@ -2305,20 +3235,20 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from veerer import *
-            sage: from array import array
+            sage: from veerer import *  # not tested
+            sage: from array import array  # not tested
 
         The torus example (6 symmetries)::
 
-            sage: fp = array('i', [2, 3, 5, 4, 1, 0])
-            sage: vp = array('i', [4, 5, 1, 0, 2, 3])
-            sage: T = Triangulation.from_permutations(vp, fp, (array('i', [0]*6),), mutable=True)
-            sage: T._relabelling_from(3)
+            sage: fp = array('i', [2, 3, 5, 4, 1, 0])  # not tested
+            sage: vp = array('i', [4, 5, 1, 0, 2, 3])  # not tested
+            sage: T = Triangulation.from_permutations(vp, fp, (array('i', [0]*6),), mutable=True)  # not tested
+            sage: T._relabelling_from(3)  # not tested
             array('i', [5, 4, 1, 0, 2, 3])
 
-            sage: p = T._relabelling_from(0)
-            sage: T.relabel(p)
-            sage: for i in range(6):
+            sage: p = T._relabelling_from(0)  # not tested
+            sage: T.relabel(p)  # not tested
+            sage: for i in range(6):  # not tested
             ....:     p = T._relabelling_from(i)
             ....:     S = T.copy()
             ....:     S.relabel(p)
@@ -2326,14 +3256,14 @@ class OrientedMap:
 
         The sphere example (3 symmetries)::
 
-            sage: fp = array('i', [2, -1, 4, -1, 0, -1])
-            sage: vp = array('i', [4, -1, 0, -1, 2, -1])
-            sage: T = Triangulation.from_permutations(vp, fp, (array('i', [0]*6),), mutable=True)
-            sage: T._relabelling_from(2)
+            sage: fp = array('i', [2, -1, 4, -1, 0, -1])  # not tested
+            sage: vp = array('i', [4, -1, 0, -1, 2, -1])  # not tested
+            sage: T = Triangulation.from_permutations(vp, fp, (array('i', [0]*6),), mutable=True)  # not tested
+            sage: T._relabelling_from(2)  # not tested
             array('i', [4, 5, 0, 1, 2, 3])
-            sage: p = T._relabelling_from(0)
-            sage: T.relabel(p)
-            sage: for i in range(3):
+            sage: p = T._relabelling_from(0)  # not tested
+            sage: T.relabel(p)  # not tested
+            sage: for i in range(3):  # not tested
             ....:     p = T._relabelling_from(2 * i)
             ....:     S = T.copy()
             ....:     S.relabel(p)
@@ -2341,10 +3271,10 @@ class OrientedMap:
 
         An example with no automorphism::
 
-            sage: T = Triangulation("(0,1,2)(3,4,5)(~0,~3,6)", mutable=True)
-            sage: p = T._relabelling_from(0)
-            sage: T.relabel(p)
-            sage: for i in T.half_edges():
+            sage: T = Triangulation("(0,1,2)(3,4,5)(~0,~3,6)", mutable=True)  # not tested
+            sage: p = T._relabelling_from(0)  # not tested
+            sage: T.relabel(p)  # not tested
+            sage: for i in T.half_edges():  # not tested
             ....:     if i == 0: continue
             ....:     p = T._relabelling_from(i)
             ....:     S = T.copy()
@@ -2373,67 +3303,67 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from veerer import *
+            sage: from veerer import *  # not tested
 
         An example with 4 symmetries in genus 2::
 
-            sage: T = Triangulation("(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)")
-            sage: A = T.automorphisms()
-            sage: len(A)
+            sage: T = Triangulation("(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)")  # not tested
+            sage: A = T.automorphisms()  # not tested
+            sage: len(A)  # not tested
             4
 
         And the "sphere octagon" has 8::
 
-            sage: s  = "(0,8,~7)(1,9,~0)(2,10,~1)(3,11,~2)(4,12,~3)(5,13,~4)(6,14,~5)(7,15,~6)"
-            sage: len(Triangulation(s).automorphisms())
+            sage: s  = "(0,8,~7)(1,9,~0)(2,10,~1)(3,11,~2)(4,12,~3)(5,13,~4)(6,14,~5)(7,15,~6)"  # not tested
+            sage: len(Triangulation(s).automorphisms())  # not tested
             8
 
         A veering triangulation with 4 symmetries in genus 2::
 
-            sage: fp = "(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"
-            sage: cols = "BRBBBRRBBBBR"
-            sage: V = VeeringTriangulation(fp, cols)
-            sage: A = V.automorphisms()
-            sage: len(A)
+            sage: fp = "(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"  # not tested
+            sage: cols = "BRBBBRRBBBBR"  # not tested
+            sage: V = VeeringTriangulation(fp, cols)  # not tested
+            sage: A = V.automorphisms()  # not tested
+            sage: len(A)  # not tested
             4
 
         Examples with boundaries::
 
-            sage: t = Triangulation("(0,1,2)", boundary="(~0:1)(~1:1)(~2:1)")
-            sage: len(t.automorphisms())
+            sage: t = Triangulation("(0,1,2)", boundary="(~0:1)(~1:1)(~2:1)")  # not tested
+            sage: len(t.automorphisms())  # not tested
             3
-            sage: t = Triangulation("(0,1,2)", boundary="(~0:1,~1:1,~2:1)")
-            sage: len(t.automorphisms())
+            sage: t = Triangulation("(0,1,2)", boundary="(~0:1,~1:1,~2:1)")  # not tested
+            sage: len(t.automorphisms())  # not tested
             3
-            sage: t = Triangulation("(0,1,2)", boundary="(~0:1,~1:1,~2:2)")
-            sage: len(t.automorphisms())
+            sage: t = Triangulation("(0,1,2)", boundary="(~0:1,~1:1,~2:2)")  # not tested
+            sage: len(t.automorphisms())  # not tested
             1
 
         Linear families::
 
-            sage: s = StrebelGraph("(0,3,7,~6,~2,1)(2,5,~4,~3,~1,~0)(4,8,~5)(6,~8,~7)")
-            sage: f = StrebelGraphLinearFamily(s, [(2, 0, 0, 0, 1, 0, 1, 0, 2), (0, 2, 0, 0, 0, 1, 0, 1, 2), (0, 0, 1, 1, 0, 0, 0, 0, 2)])
-            sage: len(s.automorphisms())
+            sage: s = StrebelGraph("(0,3,7,~6,~2,1)(2,5,~4,~3,~1,~0)(4,8,~5)(6,~8,~7)")  # not tested
+            sage: f = StrebelGraphLinearFamily(s, [(2, 0, 0, 0, 1, 0, 1, 0, 2), (0, 2, 0, 0, 0, 1, 0, 1, 2), (0, 0, 1, 1, 0, 0, 0, 0, 2)])  # not tested
+            sage: len(s.automorphisms())  # not tested
             2
-            sage: len(f.automorphisms())
+            sage: len(f.automorphisms())  # not tested
             2
 
         A non-connected example::
 
-            sage: t = Triangulation("(0,1,3)(2,4,~4)(~2,5,~5)(6,7,8)")
-            sage: len(t.automorphisms())
+            sage: t = Triangulation("(0,1,3)(2,4,~4)(~2,5,~5)(6,7,8)")  # not tested
+            sage: len(t.automorphisms())  # not tested
             36
 
         TESTS::
 
-            sage: examples = []
-            sage: examples.append(Triangulation("(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"))
-            sage: examples.append(Triangulation("(0,8,~7)(1,9,~0)(2,10,~1)(3,11,~2)(4,12,~3)(5,13,~4)(6,14,~5)(7,15,~6)"))
-            sage: examples.append(Triangulation("(0,1,2)", boundary="(~0:1)(~1:1)(~2:1)"))
-            sage: examples.append(Triangulation("(0,1,3)(2,4,~4)(~2,5,~5)(6,7,8)"))
+            sage: examples = []  # not tested
+            sage: examples.append(Triangulation("(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"))  # not tested
+            sage: examples.append(Triangulation("(0,8,~7)(1,9,~0)(2,10,~1)(3,11,~2)(4,12,~3)(5,13,~4)(6,14,~5)(7,15,~6)"))  # not tested
+            sage: examples.append(Triangulation("(0,1,2)", boundary="(~0:1)(~1:1)(~2:1)"))  # not tested
+            sage: examples.append(Triangulation("(0,1,3)(2,4,~4)(~2,5,~5)(6,7,8)"))  # not tested
 
-            sage: examples.append(StrebelGraph("(0,3,7,~6,~2,1)(2,5,~4,~3,~1,~0)(4,8,~5)(6,~8,~7)"))
-            sage: for G in examples:
+            sage: examples.append(StrebelGraph("(0,3,7,~6,~2,1)(2,5,~4,~3,~1,~0)(4,8,~5)(6,~8,~7)"))  # not tested
+            sage: for G in examples:  # not tested
             ....:     H = G.copy(mutable=True)
             ....:     for a in G.automorphisms():
             ....:         assert H == G
@@ -2454,23 +3384,23 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from veerer import Triangulation, VeeringTriangulation, StrebelGraph
-            sage: from veerer.permutation import perm_random_centralizer
+            sage: from veerer import Triangulation, VeeringTriangulation, StrebelGraph  # not tested
+            sage: from veerer.permutation import perm_random_centralizer  # not tested
 
-            sage: examples = []
-            sage: triangles = "(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"
-            sage: examples.append(Triangulation(triangles, mutable=True))
-            sage: examples.append(Triangulation("(0,1,3)(2,4,~4)(~2,5,~5)(6,7,8)", mutable=True))
-            sage: fp = "(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"
-            sage: cols = "BRBBBRRBBBBR"
-            sage: examples.append(VeeringTriangulation(fp, cols, mutable=True))
-            sage: fp = "(0,16,~15)(1,19,~18)(2,22,~21)(3,21,~20)(4,20,~19)(5,23,~22)(6,18,~17)(7,17,~16)(8,~1,~23)(9,~2,~8)(10,~3,~9)(11,~4,~10)(12,~5,~11)(13,~6,~12)(14,~7,~13)(15,~0,~14)"
-            sage: cols = "RRRRRRRRBBBBBBBBBBBBBBBB"
-            sage: examples.append(VeeringTriangulation(fp, cols, mutable=True))
-            sage: examples.append(StrebelGraph("(0,6,~5,~3,~1,4,~4,2,~2)(1)(3,~0)(5)(~6)", mutable=True))
-            sage: examples.append(StrebelGraph("(0,6,~5,~3,~1,4,~4:3,2,~2:3)(1:2)(3:2,~0)(5:2)(~6)", mutable=True))
+            sage: examples = []  # not tested
+            sage: triangles = "(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"  # not tested
+            sage: examples.append(Triangulation(triangles, mutable=True))  # not tested
+            sage: examples.append(Triangulation("(0,1,3)(2,4,~4)(~2,5,~5)(6,7,8)", mutable=True))  # not tested
+            sage: fp = "(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"  # not tested
+            sage: cols = "BRBBBRRBBBBR"  # not tested
+            sage: examples.append(VeeringTriangulation(fp, cols, mutable=True))  # not tested
+            sage: fp = "(0,16,~15)(1,19,~18)(2,22,~21)(3,21,~20)(4,20,~19)(5,23,~22)(6,18,~17)(7,17,~16)(8,~1,~23)(9,~2,~8)(10,~3,~9)(11,~4,~10)(12,~5,~11)(13,~6,~12)(14,~7,~13)(15,~0,~14)"  # not tested
+            sage: cols = "RRRRRRRRBBBBBBBBBBBBBBBB"  # not tested
+            sage: examples.append(VeeringTriangulation(fp, cols, mutable=True))  # not tested
+            sage: examples.append(StrebelGraph("(0,6,~5,~3,~1,4,~4,2,~2)(1)(3,~0)(5)(~6)", mutable=True))  # not tested
+            sage: examples.append(StrebelGraph("(0,6,~5,~3,~1,4,~4:3,2,~2:3)(1:2)(3:2,~0)(5:2)(~6)", mutable=True))  # not tested
 
-            sage: for G in examples:
+            sage: for G in examples:  # not tested
             ....:     print(G)
             ....:     r, fp, half_edges_data, edges_data = G.best_relabelling()
             ....:     for _ in range(10):
@@ -2650,19 +3580,19 @@ class OrientedMap:
 
         EXAMPLES::
 
-            sage: from veerer import *
-            sage: from veerer.permutation import perm_random, perm_random_centralizer
+            sage: from veerer import *  # not tested
+            sage: from veerer.permutation import perm_random, perm_random_centralizer  # not tested
 
-            sage: t = [(-12, 4, -4), (-11, -1, 11), (-10, 0, 10), (-9, 9, 1),
+            sage: t = [(-12, 4, -4), (-11, -1, 11), (-10, 0, 10), (-9, 9, 1),  # not tested
             ....:      (-8, 8, -2), (-7, 7, 2), (-6, 6, -3), (-5, 5, 3)]
-            sage: T = Triangulation(t, mutable=True)
-            sage: T
+            sage: T = Triangulation(t, mutable=True)  # not tested
+            sage: T  # not tested
             Triangulation("(0,10,~9)(~0,11,~10)(1,~8,9)(~1,~7,8)(2,~6,7)(~2,~5,6)(3,~4,5)(~3,~11,4)")
-            sage: T._check()
-            sage: T.set_canonical_labels()
-            sage: T
+            sage: T._check()  # not tested
+            sage: T.set_canonical_labels()  # not tested
+            sage: T  # not tested
             Triangulation("(0,1,2)(~0,~2,3)(~1,4,5)(~3,6,7)(~4,8,~5)(~6,9,~7)(~8,10,11)(~9,~11,~10)")
-            sage: T._check()
+            sage: T._check()  # not tested
         """
         if check:
             self._assert_mutable()
@@ -2675,77 +3605,6 @@ class OrientedMap:
         self._set_data_pointers()
         if mapping:
             return r
-
-    def iso_sig(self):
-        r"""
-        Return a canonical signature.
-
-        EXAMPLES::
-
-            sage: from veerer import *
-            sage: T = Triangulation("(0,3,1)(~0,4,2)(~1,~2,~4)")
-            sage: T.iso_sig()
-            '5_1__1_2~46098537_0000000000'
-            sage: TT = Triangulation.from_string(T.iso_sig())
-            sage: TT
-            Triangulation("(0,1,2)(~1,3,4)(~2,~4,~3)")
-            sage: TT.iso_sig() == T.iso_sig()
-            True
-
-            sage: T = Triangulation("(0,10,~6)(1,12,~2)(2,14,~3)(3,16,~4)(4,~13,~5)(5,~1,~0)(6,~17,~7)(7,~14,~8)(8,13,~9)(9,~11,~10)(11,~15,~12)(15,17,~16)")
-            sage: T.iso_sig()
-            'i_1__1_264a0e8i1mcj3sgr5tkq7xov9dbupwfzhyln_000000000000000000000000000000000000'
-            sage: Triangulation.from_string(T.iso_sig())
-            Triangulation("(0,1,2)(~0,3,4)(~1,5,6)(~2,7,8)(~3,9,10)(~4,11,12)(~5,~9,13)(~6,14,~12)(~7,~13,15)(~8,~14,16)(~10,~16,17)(~11,~15,~17)")
-
-            sage: t = [(-12, 4, -4), (-11, -1, 11), (-10, 0, 10), (-9, 9, 1),
-            ....:      (-8, 8, -2), (-7, 7, 2), (-6, 6, -3), (-5, 5, 3)]
-            sage: cols = [RED, RED, RED, RED, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE]
-            sage: T = VeeringTriangulation(t, cols, mutable=True)
-            sage: T.iso_sig()
-            'c_1_1_1_2548061cag39ei7dbkfnmjhl_000000000000000000000000_122212122212'
-
-        If we relabel the triangulation, the isomorphic signature does not change::
-
-            sage: from veerer.permutation import perm_random_centralizer
-            sage: p = perm_random_centralizer(T.edge_permutation())
-            sage: T.relabel(p)
-            sage: T.iso_sig()
-            'c_1_1_1_2548061cag39ei7dbkfnmjhl_000000000000000000000000_122212122212'
-
-        An isomorphic triangulation can be reconstructed from the isomorphic
-        signature via::
-
-            sage: s = T.iso_sig()
-            sage: T2 = VeeringTriangulation.from_string(s)
-            sage: T == T2
-            False
-            sage: T.is_isomorphic(T2)
-            True
-
-        TESTS::
-
-            sage: from veerer.veering_triangulation import VeeringTriangulation
-            sage: from veerer.permutation import perm_random
-
-            sage: t = [(-12, 4, -4), (-11, -1, 11), (-10, 0, 10), (-9, 9, 1),
-            ....:      (-8, 8, -2), (-7, 7, 2), (-6, 6, -3), (-5, 5, 3)]
-            sage: cols = [RED, RED, RED, RED, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE]
-            sage: T = VeeringTriangulation(t, cols, mutable=True)
-            sage: iso_sig = T.iso_sig()
-            sage: for _ in range(10):
-            ....:     p = perm_random_centralizer(T.edge_permutation())
-            ....:     T.relabel(p)
-            ....:     assert T.iso_sig() == iso_sig
-
-            sage: VeeringTriangulation("(0,1,2)(3,4,~1)(5,6,~4)", "RBGGRBG").iso_sig()
-            '7_1_1_1_2~4~068~5ac~9~_00000000000000_8128128'
-            sage: VeeringTriangulation.from_string('7_1_1_1_2~4~068~5ac~9~_00000000000000_8128128')
-            VeeringTriangulation("(0,1,2)(~2,3,4)(~4,5,6)", "GRBGRBG")
-        """
-        T = self.copy(mutable=True)
-        T.set_canonical_labels()
-        return T.to_string()
 
     def _non_isom_easy(self, other):
         r"""
@@ -2764,61 +3623,31 @@ class OrientedMap:
 
         INPUT:
 
-        - ``other`` - a constellation
+        - ``other`` -- an :class:`OrientedMap`
 
         - ``certificate`` -- optional boolean (default ``False``), whether to
-           additionally return the relabelling when ``self`` and ``other`` are
-           isomorphic
+          additionally return the relabelling when ``self`` and ``other`` are
+          isomorphic
 
         EXAMPLES::
 
-            sage: from veerer import Triangulation
-            sage: sphere = Triangulation("(0,1,2)(~0,~2,~1)")
-            sage: sphere2 = Triangulation("(0,2,1)(~0,~1,~2)")
-            sage: torus = Triangulation("(0,1,2)(~0,~1,~2)")
-            sage: sphere.is_isomorphic(sphere2)
-            True
-            sage: sphere.is_isomorphic(torus)
-            False
+            sage: from combisurf import OrientedMap
+            sage: m = OrientedMap(vp="(0,1,2)(~0,~1,~2)")
+            sage: m.is_isomorphic(m)
+            Traceback (most recent call last):
+            ...
+            NotImplementedError
 
-        TESTS::
+        .. TODO::
 
-            sage: from veerer import Triangulation, VeeringTriangulation
-            sage: from veerer.permutation import perm_random_centralizer
-
-            sage: T = Triangulation("(0,5,1)(~0,4,2)(~1,~2,~4)(3,6,~5)", mutable=True)
-            sage: TT = T.copy()
-            sage: for _ in range(10):
-            ....:     rel = perm_random_centralizer(TT.edge_permutation())
-            ....:     TT.relabel(rel)
-            ....:     assert T.is_isomorphic(TT)
-
-            sage: fp = "(0,~1,2)(~0,1,~3)(4,~5,3)(~4,6,~2)(7,~6,8)(~7,5,~9)(10,~11,9)(~10,11,~8)"
-            sage: cols = "BRBBBRRBBBBR"
-            sage: V = VeeringTriangulation(fp, cols, mutable=True)
-            sage: W = V.copy()
-            sage: p = perm_random_centralizer(V.edge_permutation())
-            sage: W.relabel(p)
-            sage: assert V.is_isomorphic(W) is True
-            sage: ans, cert = V.is_isomorphic(W, True)
-            sage: V.relabel(cert)
-            sage: assert V == W
+            The implementation relied on :meth:`best_relabelling` which reads
+            the attribute ``_half_edges_data``. That attribute is never
+            assigned on an :class:`OrientedMap`, so the whole canonical
+            labelling machinery raises ``AttributeError``. Rewrite it, or drop
+            the ``_half_edges_data`` / ``_edges_data`` indirection that was
+            inherited from veerer.
         """
-        if type(self) is not type(other):
-            raise TypeError("can only check isomorphisms between identical types")
-
-        if self._non_isom_easy(other):
-            return (False, None) if certificate else False
-
-        r1, fp1, half_edges_data1, edges_data1 = self.best_relabelling()
-        r2, fp2, half_edges_data2, edges_data2 = other.best_relabelling()
-
-        if fp1 != fp2 or half_edges_data1 != half_edges_data2 or edges_data1 != edges_data2:
-            return (False, None) if certificate else False
-        elif certificate:
-            return (True, perm_compose(r1, perm_invert(r2)))
-        else:
-            return True
+        raise NotImplementedError
 
     def dual(self, mutable=None, check=True):
         r"""
@@ -2926,8 +3755,7 @@ class OrientedMap:
         self._fp[oh2] = -1
         self._fp[oh3] = -1
 
-        remove_trailing_minus_ones(self._fp)
-        remove_trailing_minus_ones(self._vp)
+        self._clear_trailing_edges()
 
     def disjoint_union(self, *others, check=True):
         r"""
@@ -2965,6 +3793,7 @@ class OrientedMap:
 
             sage: from combisurf import OrientedMap
             sage: M = OrientedMap(vp=[0, 2, 1, 4, 3, 5], mutable=True)
+            sage: M.merge_vertices(0, 2, 5)
             sage: M
             OrientedMap("(0,~0,1,~2)(~1,2)", "(0)(~0,~2,~1)(1,2)")
         """
@@ -3023,16 +3852,16 @@ class OrientedMap:
 
         oh = self._ep(h)
         pre_h = self._fp[oh]
-    
+
         self._vp[pre_h] = self._vp[h]
         if c >= 0:
             self._vp[h] = self._vp[c]
-            self._vp[c] = h    
-            self._fp[oh] = c           
+            self._vp[c] = h
+            self._fp[oh] = c
         else:
-            self._vp[h] = h            
+            self._vp[h] = h
             self._fp[oh] = h
-        self._fp[self._ep(self._vp[h])] = h 
+        self._fp[self._ep(self._vp[h])] = h
         self._fp[self._ep(self._vp[pre_h])] = pre_h
 
 
@@ -3090,4 +3919,3 @@ class OrientedMap:
 # - add_edge(h1, h2=None, h=None): if h2=None => folded and h1=h2 => loop (h is the new name)
 # - glue(h1, h2)
 # - union(m1, m2, m3, ...): disjoint union
-

@@ -11,7 +11,7 @@ TODO:
 - There are several functions that return a list of lists
   that could be encoded in a more compact form. Namely
   this only requires two attributes ``content`` and ``bounds``
-  where each list is a slice content[bouds[i]:bounds[i+1]].
+  where each list is a slice content[bounds[i]:bounds[i+1]].
 """
 # ****************************************************************************
 #  This file is part of combisurf
@@ -36,7 +36,7 @@ TODO:
 from cpython cimport array
 from math import log
 
-import sage.all
+import sage.all  # no-cython-lint
 from sage.misc.prandom import shuffle, randint
 from sage.arith.functions import lcm
 
@@ -187,6 +187,26 @@ def perm_check(l, int n=-1, involution=None):
                 return False
 
     return True
+
+
+def perm_trim(array.array p):
+    r"""
+    Clear trailing `-1` from the array ``p`` inplace.
+
+    EXAMPLES::
+
+        sage: from combisurf.permutation import perm_init, perm_trim
+        sage: p = perm_init([3, 1, 0, 2, -1])
+        sage: p
+        array('i', [3, 1, 0, 2, -1])
+        sage: perm_trim(p)
+        sage: p
+        array('i', [3, 1, 0, 2])
+    """
+    cdef int n = len(p) - 1
+    while n >= 0 and p.data.as_ints[n] == -1:
+        n -= 1
+    array.resize(p, n + 1)
 
 
 def perm_id(int n):
@@ -368,7 +388,7 @@ def str_to_cycles(s):
         sage: str_to_cycles("(0,1)(3,2)")
         [[0, 1], [3, 2]]
 
-    An integer ``i`` preceeded by a ``"~"`` is interpreted as ``-i-1``::
+    An integer ``i`` preceded by a ``"~"`` is interpreted as ``-i-1``::
 
         sage: str_to_cycles("(0,1,2)(~0,~1,~2)")
         [[0, 1, 2], [-1, -2, -3]]
@@ -659,31 +679,190 @@ def perm_is_one(array.array p, int n=-1):
 
 def perm_dense_cycles(array.array p, int n=-1):
     r"""
+    Return an array of length ``n`` labelling each of the first ``n`` points of
+    ``p`` by the index of the cycle it belongs to.
+
+    The cycles are numbered by consecutive integers starting from zero,
+    following the order in which they are met while scanning the points
+    ``0, 1, ..., n - 1``. Inactive points, encoded by ``-1`` in ``p``, get the
+    label ``-1``.
+
+    INPUT:
+
+    - ``p`` -- a permutation
+
+    - ``n`` -- (default: ``-1``) only use the first ``n`` points of ``p``; if
+      ``-1`` use them all. It must lie between ``0`` and ``len(p)``, and ``p``
+      must map ``[0, n)`` to itself, since a cycle leaving that range has no
+      label to be given; a ``ValueError`` is raised otherwise.
+
     EXAMPLES::
 
         sage: from array import array
         sage: from combisurf.permutation import perm_dense_cycles
 
-        sage: perm_dense_cycles(array('i', [1,2,0]))
-        array('i', [0, 0, 0])
+        sage: p = array('i', [1,3,4,0,5,7,6,2])
+        sage: perm_dense_cycles(p)
+        array('i', [0, 0, 1, 0, 1, 1, 2, 1])
 
-        sage: perm_dense_cycles(array('i', [0,2,1]))
-        array('i', [0, 1, 1])
+    The same array could also be constructed from :func:`perm_cycles` as
+    follows::
 
-        sage: perm_dense_cycles(array('i', [2,1,0]))
-        array('i', [0, 1, 0])
+        sage: from combisurf.permutation import perm_cycles
+        sage: perm_cycles(p)
+        [[0, 1, 3], [2, 4, 5, 7], [6]]
+        sage: ans = array('i', [-1] * 8)
+        sage: for i, c in enumerate(perm_cycles(p)):
+        ....:     for j in c:
+        ....:         ans[j] = i
+        sage: ans
+        array('i', [0, 0, 1, 0, 1, 1, 2, 1])
+
+    The labels are consecutive, whatever the position of the cycles::
+
+        sage: perm_dense_cycles(array('i', [1,0,3,2,5,4]))
+        array('i', [0, 0, 1, 1, 2, 2])
+
+    Inactive points, encoded by ``-1``, get the label ``-1`` and are not
+    counted::
+
+        sage: perm_dense_cycles(array('i', [1,0,-1,4,3]))
+        array('i', [0, 0, -1, 1, 1])
+        sage: perm_dense_cycles(array('i', [2,-1,0]))
+        array('i', [0, -1, 0])
+
+    TESTS:
+
+    With ``n`` only the first ``n`` points are scanned, and they must be
+    stable under ``p``::
+
+        sage: perm_dense_cycles(array('i', [1,0,3,2]), 2)
+        array('i', [0, 0])
+        sage: perm_dense_cycles(array('i', [1,0,3,2]), 0)
+        array('i')
+        sage: perm_dense_cycles(array('i', [3,1,2,0]), 2)
+        Traceback (most recent call last):
+        ...
+        ValueError: p does not map [0, 2) to itself
+        sage: perm_dense_cycles(array('i', [1,0,3,2]), 9)
+        Traceback (most recent call last):
+        ...
+        ValueError: n (=9) must be between 0 and len(p) (=4)
+
+    .. SEEALSO::
+
+        :func:`perm_cycles`
     """
     if n == -1:
         n = len(p)
+    elif n < 0 or n > len(p):
+        raise ValueError(f"n (={n}) must be between 0 and len(p) (={len(p)})")
+
     cdef array.array res = array.array('i', [-1] * n)
-    cdef int i, k = 0
+    cdef int * pp = p.data.as_ints
+    cdef int * rr = res.data.as_ints
+    cdef int i, j, k = 0
     for i in range(n):
-        if p[i] == -1:
+        if pp[i] == -1 or rr[i] != -1:
             continue
-        while res[i] == -1:
-            res[i] = k
-            i = p.data.as_ints[i]
+        j = i
+        while rr[j] == -1:
+            rr[j] = k
+            j = pp[j]
+            if j < 0 or j >= n:
+                raise ValueError(f"p does not map [0, {n}) to itself")
         k += 1
+    return res
+
+
+def perm_dense_cycle_positions(array.array p, int n=-1):
+    r"""
+    Return an integral array of length ``n`` whose element at index ``i`` is the
+    position of ``i`` in its cycle.
+
+    A cycle is read from the smallest point it contains, which is the one at
+    position zero, in the order given by ``p``. Inactive points, encoded by
+    ``-1`` in ``p``, get the value ``-1``.
+
+    INPUT:
+
+    - ``p`` -- a permutation
+
+    - ``n`` -- (default: ``-1``) only use the first ``n`` points of ``p``; if
+      ``-1`` use them all. It must lie between ``0`` and ``len(p)``, and ``p``
+      must map ``[0, n)`` to itself, since the position of a point outside that
+      range is not recorded; a ``ValueError`` is raised otherwise.
+
+    EXAMPLES::
+
+        sage: from array import array
+        sage: from combisurf.permutation import perm_dense_cycle_positions
+
+        sage: p = array('i', [1,3,4,0,5,7,6,2])
+        sage: perm_dense_cycle_positions(p)
+        array('i', [0, 1, 0, 2, 1, 2, 0, 3])
+
+    The same array could also be constructed from :func:`perm_cycles` as
+    follows::
+
+        sage: from combisurf.permutation import perm_cycles
+        sage: ans = array('i', [-1] * 8)
+        sage: for c in perm_cycles(p):
+        ....:     for pos, j in enumerate(c):
+        ....:         ans[j] = pos
+        sage: ans
+        array('i', [0, 1, 0, 2, 1, 2, 0, 3])
+
+    Inactive points, encoded by ``-1``, gets value ``-1``::
+
+        sage: perm_dense_cycle_positions(array('i', [1,0,-1,4,3]))
+        array('i', [0, 1, -1, 0, 1])
+
+        sage: perm_dense_cycle_positions(array('i', [2,-1,0]))
+        array('i', [0, -1, 1])
+
+    TESTS:
+
+    With ``n`` only the first ``n`` points are scanned, and they must be
+    stable under ``p``::
+
+        sage: perm_dense_cycle_positions(array('i', [1,0,3,2]), 2)
+        array('i', [0, 1])
+        sage: perm_dense_cycle_positions(array('i', [1,0,3,2]), 0)
+        array('i')
+        sage: perm_dense_cycle_positions(array('i', [3,1,2,0]), 2)
+        Traceback (most recent call last):
+        ...
+        ValueError: p does not map [0, 2) to itself
+        sage: perm_dense_cycle_positions(array('i', [1,0,3,2]), 9)
+        Traceback (most recent call last):
+        ...
+        ValueError: n (=9) must be between 0 and len(p) (=4)
+
+    .. SEEALSO::
+
+        :func:`perm_dense_cycles`
+    """
+    if n == -1:
+        n = len(p)
+    elif n < 0 or n > len(p):
+        raise ValueError(f"n (={n}) must be between 0 and len(p) (={len(p)})")
+
+    cdef array.array res = array.array('i', [-1] * n)
+    cdef int * pp = p.data.as_ints
+    cdef int * rr = res.data.as_ints
+    cdef int i, j, k
+    for i in range(n):
+        if pp[i] == -1 or rr[i] != -1:
+            continue
+        j = i
+        k = 0
+        while rr[j] == -1:
+            rr[j] = k
+            j = pp[j]
+            if j < 0 or j >= n:
+                raise ValueError(f"p does not map [0, {n}) to itself")
+            k += 1
     return res
 
 
@@ -1869,7 +2048,7 @@ def perms_canonical_labels_from(x, y, j0):
 
     k = 0
     mapping = [None] * n
-    waiting = [[] for i in range(len(y))]
+    waiting = [[] for _ in range(len(y))]
 
     while k < n:
         # initialize at j0
@@ -1951,7 +2130,7 @@ def edge_relabelling_from(array.array relabelling, array.array pnew, array.array
 
     cdef array.array to_process = array.clone(p, n, False)  # FIFO stack of half-edges to process
     cdef int s, t  # bottom and top of to_process
-    cdef int e, e1
+    cdef int e
 
     to_process.data.as_ints[0] = root
     s = 0
@@ -2001,29 +2180,29 @@ def edge_relabelling_from(array.array relabelling, array.array pnew, array.array
 #     r"""
 #     Set ``relabelling`` to a canonical relabelling of the pair of permutations
 #     ``(p0, p1)`` where ``root`` is mapped to ``image``.
-# 
+#
 #     The canonical exploration is a depth first search done by saturating with
 #     ``p0`` first and then ``p1``.
-# 
+#
 #     INPUT:
-# 
+#
 #     - ``relabelling`` - a partial relabelling (initialized with ``-1`` at
 #       unrelabelled positions). It is assumed that the relabelling is supported on
 #       a union of orbits of the group generated by ``p0`` and ``p1``.
-# 
+#
 #     - ``p0``, ``p1`` - permutations of size ``n``
-# 
+#
 #     - ``n`` - size of the permutation
-# 
+#
 #     - ``root`` - (integer) half-edge
-# 
+#
 #     - ``image`` - (integer) default to 0
-# 
+#
 #     OUTPUT: The value of ``image`` at the end of the process. If ``image`` is
 #     equal to ``n`` if and only if the constellation has been fully relabelled.
-# 
+#
 #     EXAMPLES::
-# 
+#
 #         sage: from array import array
 #         sage: from combisurf.permutation import perms_relabelling_from
 #         sage: vp = array('i', [9, 13, 12, 11, 10, 14, 5, 6, 7, 8, 29, 25, 26, 27, 28, 1, 15, 16, 17, 18, 19, 0, 4, 3, 2, 21, 22, 23, 24, 20])
@@ -2033,24 +2212,24 @@ def edge_relabelling_from(array.array relabelling, array.array pnew, array.array
 #         30
 #         sage: relabelling
 #         array('i', [0, 22, 9, 26, 13, 5, 4, 3, 2, 1, 14, 27, 10, 23, 6, 21, 20, 19, 18, 17, 16, 29, 12, 25, 8, 28, 11, 24, 7, 15])
-# 
+#
 #     Note that if the group generated by ``vp`` and ``ep`` is not transitive,
 #     then the relabelling is only partial. One needs to call the function twice
 #     to get a full relabelling::
-# 
+#
 #         sage: vp = array('i', [3, 2, 1, 0])
 #         sage: ep = array('i', [3, 1, 2, 0])
-# 
+#
 #         sage: relabelling = array('i', [-1] * 4)
 #         sage: permutations_relabelling_from(relabelling, vp, ep, 4, 0, 0)
 #         2
 #         sage: relabelling
-# 
+#
 #         sage: relabelling = array('i', [-1] * 4)
 #         sage: permutations_relabelling_from(relabelling, vp, ep, 4, 2, 0)
 #         2
 #         sage: relabelling
-# 
+#
 #         sage: relabelling = array('i', [-1] * 4)
 #         sage: permutations_relabelling_from(relabelling, vp, ep, 4, 0, 0)
 #         2
@@ -2061,15 +2240,15 @@ def edge_relabelling_from(array.array relabelling, array.array pnew, array.array
 #     """
 #     if n < 0 or len(relabelling) < n or len(p0) < n or len(p1) < n:
 #         raise ValueError("invalid arguments")
-# 
+#
 #     cdef array.array to_process = array.clone(p0, n, False)  # FIFO stack of half-edges to process
 #     cdef int s, t  # bottom and top of to_process
 #     cdef int e, e1
-# 
+#
 #     to_process.data.as_ints[0] = root
 #     s = 0
 #     t = 1
-# 
+#
 #     while s < t:
 #         # pick the next half-edge and saturate its orbit with p0 and store the
 #         # p1 images in to_process
@@ -2083,10 +2262,10 @@ def edge_relabelling_from(array.array relabelling, array.array pnew, array.array
 #                 to_process.data.as_ints[t] = e1
 #                 t += 1
 #             e = p0.data.as_ints[e]
-# 
+#
 #     if image > n:
 #         raise ValueError("invalid argument")
-# 
+#
 #     return image
 
 

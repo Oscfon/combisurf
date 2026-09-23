@@ -55,3 +55,70 @@ def test_word_free_group_inverse():
         inv = word_free_group_inverse(w)
         assert not word_free_group_mul(w, inv)
         assert not word_free_group_mul(inv, w)
+
+
+def test_word_find():
+    from itertools import product
+    from combisurf.word import word_init, word_failure_table, word_find
+
+    # exhaustive agreement with str.find, for every start
+    for m in range(5):
+        for uu in product([0, 1], repeat=m):
+            u = word_init(uu)
+            su = ''.join('ab'[x] for x in uu)
+            t = word_failure_table(u)
+            for n in range(7):
+                for vv in product([0, 1], repeat=n):
+                    v = word_init(vv)
+                    sv = ''.join('ab'[x] for x in vv)
+                    for start in range(-n - 2, n + 3):
+                        expected = sv.find(su, start)
+                        assert word_find(u, v, start) == expected, (uu, vv, start)
+                        assert word_find(u, v, start, t) == expected, (uu, vv, start)
+
+
+def test_word_is_factor():
+    import random
+    from itertools import product
+    from combisurf.word import word_init, word_is_factor
+
+    def naive(u, v):
+        return any(v[i:i + len(u)] == u for i in range(len(v) - len(u) + 1))
+
+    for m in range(5):
+        for uu in product([0, 1], repeat=m):
+            u = word_init(uu)
+            for n in range(7):
+                for vv in product([0, 1], repeat=n):
+                    v = word_init(vv)
+                    assert word_is_factor(u, v) == naive(u, v), (uu, vv)
+
+    # larger alphabets and longer words
+    rng = random.Random(0)
+    for _ in range(20000):
+        a = rng.choice([1, 2, 3, 9])
+        u = word_init([rng.randrange(a) for _ in range(rng.randint(0, 10))])
+        v = word_init([rng.randrange(a) for _ in range(rng.randint(0, 30))])
+        assert word_is_factor(u, v) == naive(u, v), (list(u), list(v))
+
+
+def test_word_border_table():
+    from itertools import product
+    from combisurf.word import word_init, word_border_table, word_failure_table
+
+    for n in range(9):
+        for uu in product([0, 1], repeat=n):
+            u = word_init(uu)
+            b = word_border_table(u)
+            assert len(b) == n + 1
+            # b[i] is the length of the longest proper border of u[:i]
+            for i in range(n + 1):
+                pre = uu[:i]
+                expected = max([k for k in range(i) if pre[:k] == pre[i - k:]] or [0])
+                assert b[i] == expected, (uu, i, list(b))
+            # the failure table is the strong variant of the border table
+            t = word_failure_table(u)
+            ref = [-1] if n else []
+            for i in range(1, n):
+                ref.append(b[i] if u[i] != u[b[i]] else ref[b[i]])
+            assert list(t) == ref, (uu, list(t), ref)
