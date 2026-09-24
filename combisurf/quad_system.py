@@ -281,7 +281,7 @@ class QuadSystem:
 
     def turn(self, h1, h2):
         r"""
-            Compute the number of turns from ``h1`` to ``h2`` around a vertex. Raise an error if ``h1`` and ``h2``do not belong to the same vertex. 
+        Compute the number of turns from ``h1`` to ``h2`` around a vertex. Raise an error if ``h1`` and ``h2``do not belong to the same vertex. 
         """
         l1 = self._turn[h1]
         l2 = self._turn[h2]
@@ -297,7 +297,7 @@ class QuadSystem:
 
     def rotate_list(self):
         r"""
-            Compute the rotate_list of the quadsystem, i.e. the list ``rotate`` such that ``rotate[e][t]`` is the half-edge obtained in the quadsystem by turning ``t`` time around a vertex starting from the half-edge ``e``.
+        Compute the rotate_list of the quadsystem, i.e. the list ``rotate`` such that ``rotate[e][t]`` is the half-edge obtained in the quadsystem by turning ``t`` time around a vertex starting from the half-edge ``e``.
         """
         res = []
         d = 4 * self._genus
@@ -314,9 +314,9 @@ class QuadSystem:
 
 class Geodesic:
     r"""
-        A geodesic in a quadsystem
+    A geodesic in a quadsystem
 
-        A geodesic is a shortest walk in its free homotopy class. A geodesic is seen as a walk encoded by a deque with a given turn sequence.
+    A geodesic is a shortest walk in its free homotopy class. A geodesic is seen as a walk encoded by a deque with a given turn sequence.
     """
 
     def __init__(self, Q, geo=None, turn=None, check=False):
@@ -368,7 +368,7 @@ class Geodesic:
 
     def __len__(self):
         r"""
-            Return the length of the geodesic.
+        Return the length of the geodesic.
         
         EXAMPLES::
 
@@ -887,9 +887,9 @@ class Geodesic:
 
 class LazyGeodesic:
     r"""
-        A geodesic in a quadsystem
+    A geodesic in a quadsystem
 
-        A lazy geodesic is a geodesic but only the first and the last edge of the geodesic is maintained together with the turn sequence. It cannot be used to test homotopy but it can be used for contractibility.
+    A lazy geodesic is a geodesic but only the first and the last edge of the geodesic is maintained together with the turn sequence. It cannot be used to test homotopy but it can be used for contractibility.
     """
     
     def __init__(self, Q, geo=None, turn=None, check=False):
@@ -979,7 +979,7 @@ class LazyGeodesic:
             sage: m = OrientedMap(vp=[[0, 2, 4, 6],[7, 8, 5], [9, 10, 12, 11], [3, 15, 1, 13, 14]])
             sage: Q = QuadSystem(m)
             sage: Q
-            OrientedMap("(0,4,5,3,1,2,6,7)(~0,~3,~6,~4,~1,~7,~5,~2)", "(0,~2,1,~4)(~0,7,~1,3)(2,~5,4,~6)(~3,5,~7,6)")
+            OrientedMap("(0,3,4,5,1,6,7,2)(~0,~6,~4,~5,~1,~3,~7,~2)", "(0,~2,7,~3)(~0,2,~7,6)(1,~5,4,~6)(~1,5,~4,3)")
             
         """
 
@@ -1095,9 +1095,9 @@ class LazyGeodesic:
 
 class StarShapedSpace:
     r"""
-        A star shaped space in the universal covering of a quadsystem.
+    A star shaped space in the universal covering of a quadsystem.
 
-        A star shaped space is a pointed convex set in the universal covering of a quadsystem. It thus contains all geodesics from a point in it to the root. Thus all edges are oriented towards the root.
+    A star shaped space is a pointed convex set in the universal covering of a quadsystem. It thus contains all geodesics from a point in it to the root. Thus all edges are oriented towards the root.
 
     """
 
@@ -1112,14 +1112,14 @@ class StarShapedSpace:
 
         self._vertices = [root] # the projection of each vertex of the StarShapedSpace into the quadsystem
         self._quadsystem = Q # the underlying quadsystem
-        self._inedges = [{}] # for each vertex a dictionnary containing the entering edges
+        self._inedges = [{}] # for each vertex a dictionary containing the entering edges
         self._outedges = [[]] # for each vertex the list of (at most 2) outedges
         self._rotate_list = Q.rotate_list() 
 
     
     def add_vertex(self, vertex):
         r"""
-            Add a vertex to the star shaped space with no edges.
+        Add a vertex to the star shaped space with no edges.
         """
         
         self._vertices.append(vertex)
@@ -1130,7 +1130,7 @@ class StarShapedSpace:
     
     def add_edge(self, vertex1, vertex2, edge):
         r"""
-            Add an edge from vertex1 to vertex2 that project to ``edge``
+        Add an edge from vertex1 to vertex2 that project to ``edge``
         """
         Q = self._quadsystem
         if not self.contains_edge(vertex1, edge):
@@ -1141,7 +1141,7 @@ class StarShapedSpace:
 
     def contains_edge(self, vertex, edge):
         r"""
-            Test whether the star shaped space contains the edge ``edge`` at vertex ``vertex``.
+        Test whether the star shaped space contains the edge ``edge`` at vertex ``vertex``.
         """
         
         result = False
@@ -1153,7 +1153,7 @@ class StarShapedSpace:
 
     def opposite_vertex(self, vertex, edge):
         r"""
-            Return the vertex opposite to ``edge`` starting at ``vertex``.
+        Return the vertex opposite to ``edge`` starting at ``vertex``.
         """
         for elt in self._outedges[vertex]:
             if elt[0] == edge:
@@ -1166,7 +1166,7 @@ class StarShapedSpace:
         
     def rotate(self, vertex, edge, turn):
         r"""
-            Rotate around ``vertex`` starting from ``edge`` and starting from ``edge``
+        Rotate around ``vertex`` starting from ``edge`` and starting from ``edge``
         """
         if self.contains_edge(vertex, edge):
             return self._rotate_list[edge][turn]
@@ -1175,7 +1175,7 @@ class StarShapedSpace:
 
     def turn(self, vertex, edge):
         r"""
-            Return the smallest turn from ``edge`` to an outedge of ``vertex``
+        Return the smallest turn from ``edge`` to an outedge of ``vertex``
         """
         turn = None
         out_edge = None
@@ -1193,7 +1193,7 @@ class StarShapedSpace:
 
     def insert_edge(self, vertex, edge):
         r"""
-            Insert an edge in the star shaped space and add vertices and edges to maintain it star shaped.
+        Insert an edge in the star shaped space and add vertices and edges to maintain it star shaped.
         """
         
         if self.contains_edge(vertex, edge):

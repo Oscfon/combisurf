@@ -147,7 +147,7 @@ class Walk:
 
         """
         if self._oriented_map != other._oriented_map:
-            raise ValueError("The walk belong to differents maps.")
+            raise ValueError("The walk belong to different maps.")
 
         geodesic_self = self.geodesic()
         geodesic_other = other.geodesic()
