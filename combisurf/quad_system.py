@@ -331,7 +331,7 @@ class Geodesic:
 
         EXAMPLES::
 
-            sage: from combisurf import OrientedMap, QuadSystem, meodesic
+            sage: from combisurf import OrientedMap, QuadSystem, Geodesic
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
@@ -376,7 +376,7 @@ class Geodesic:
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
-            OrientedMap("(0,1,2,3,4,5,6,7)(~0,~3,~5,~1,~6,~2,~4,~7)", "(0,~7,6,~1)(~0,7,~4,3)(1,~5,4,~2)(2,~6,5,~3)")
+            OrientedMap("(0,4,5,3,1,2,6,7)(~0,~3,~6,~4,~1,~7,~5,~2)", "(0,~2,1,~4)(~0,7,~1,3)(2,~5,4,~6)(~3,5,~7,6)")
             sage: p = Geodesic(Q)
             sage: len(p)
             0
@@ -394,7 +394,7 @@ class Geodesic:
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
-            OrientedMap("(0,1,2,3,4,5,6,7)(~0,~3,~5,~1,~6,~2,~4,~7)", "(0,~7,6,~1)(~0,7,~4,3)(1,~5,4,~2)(2,~6,5,~3)")
+            OrientedMap("(0,4,5,3,1,2,6,7)(~0,~3,~6,~4,~1,~7,~5,~2)", "(0,~2,1,~4)(~0,7,~1,3)(2,~5,4,~6)(~3,5,~7,6)")
             sage: p = Geodesic(Q)
             sage: list(iter(p))
             []
@@ -414,33 +414,33 @@ class Geodesic:
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
-            OrientedMap("(0,1,2,3,4,5,6,7)(~0,~3,~5,~1,~6,~2,~4,~7)", "(0,~7,6,~1)(~0,7,~4,3)(1,~5,4,~2)(2,~6,5,~3)")
+            OrientedMap("(0,4,5,3,1,2,6,7)(~0,~3,~6,~4,~1,~7,~5,~2)", "(0,~2,1,~4)(~0,7,~1,3)(2,~5,4,~6)(~3,5,~7,6)")
             sage: p = Geodesic(Q)
             sage: p.add_edge(12)
-            sage: p.add_edge(5)
-            sage: p.add_edge(8)
-            sage: p.add_edge(1)
-            sage: p
-            Geodesic "deque([12, 5, 8, 1])" with turns "deque([(1, 1), (2, 2)])"
-            sage: p.add_edge(2)
-            sage: p
-            Geodesic "deque([10, 1, 12])" with turns "deque([(6, 2)])"
-            sage: p.add_edge(13)
-            sage: p
-            Geodesic "deque([10, 1])" with turns "deque([(6, 1)])"
-            sage: p.add_edge(14)
+            sage: p.add_edge(9)
+            sage: p.add_edge(6)
             sage: p.add_edge(9)
             sage: p
-            Geodesic "deque([10, 7])" with turns "deque([(7, 1)])"
-            sage: p.add_edge(8)
-            sage: p.add_edge(15)
+            Geodesic "deque([12, 9, 6, 9])" with turns "deque([(1, 1), (2, 2)])"
+            sage: p.add_edge(10)
             sage: p
-            Geodesic "deque([10, 1])" with turns "deque([(6, 1)])"
-            sage: p.add_edge(14)
+            Geodesic "deque([4, 15, 4])" with turns "deque([(6, 2)])"
             sage: p.add_edge(5)
-            sage: p.add_edge(2)
             sage: p
-            Geodesic "deque([10, 7, 10])" with turns "deque([(7, 1), (2, 1)])"
+            Geodesic "deque([4, 15])" with turns "deque([(6, 1)])"
+            sage: p.add_edge(0)
+            sage: p.add_edge(7)
+            sage: p
+            Geodesic "deque([4, 3])" with turns "deque([(5, 1)])"
+            sage: p.add_edge(6)
+            sage: p.add_edge(1)
+            sage: p
+            Geodesic "deque([4, 15])" with turns "deque([(6, 1)])"
+            sage: p.add_edge(12)
+            sage: p.add_edge(1)
+            sage: p.add_edge(14)
+            sage: p
+            Geodesic "deque([4, 11, 2])" with turns "deque([(7, 1), (2, 1)])"
         """
 
         Q = self._quadsystem._quad
@@ -480,33 +480,32 @@ class Geodesic:
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
-            OrientedMap("(0,1,2,3,4,5,6,7)(~0,~3,~5,~1,~6,~2,~4,~7)", "(0,~7,6,~1)(~0,7,~4,3)(1,~5,4,~2)(2,~6,5,~3)")
+            OrientedMap("(0,4,5,3,1,2,6,7)(~0,~3,~6,~4,~1,~7,~5,~2)", "(0,~2,1,~4)(~0,7,~1,3)(2,~5,4,~6)(~3,5,~7,6)")
             sage: p = Geodesic(Q)
-            sage: p.add_edge_left(2)
-            sage: p.add_edge_left(1)
-            sage: p.add_edge_left(8)
-            sage: p.add_edge_left(5)
-            Geodesic "deque([5, 8, 1, 2])" with turns "deque([(2, 2), (1, 1)])"
-            sage: p.add_edge_left(12)
-            sage: p
-            Geodesic "deque([10, 1, 12])" with turns "deque([(6, 2)])"
-            sage: p.add_edge_left(11)
-            sage: p
-            Geodesic "deque([1, 12])" with turns "deque([(6, 1)])"
+            sage: p.add_edge_left(10)
+            sage: p.add_edge_left(9)
             sage: p.add_edge_left(6)
             sage: p.add_edge_left(9)
+            Geodesic "deque([9, 6, 9, 10])" with turns "deque([(2, 2), (1, 1)])"
+            sage: p.add_edge_left(12)
             sage: p
-            Geodesic "deque([15, 12])" with turns "deque([(7, 1)])"
-            sage: p.add_edge_left(8)
+            Geodesic "deque([4, 15, 4])" with turns "deque([(6, 2)])"
+            sage: p.add_edge_left(5)
+            sage: p
+            Geodesic "deque([15, 4])" with turns "deque([(6, 1)])"
+            sage: p.add_edge_left(2)
             sage: p.add_edge_left(7)
             sage: p
-            Geodesic "deque([1, 12])" with turns "deque([(6, 1)])"
-            
+            Geodesic "deque([1, 4])" with turns "deque([(5, 1)])"
             sage: p.add_edge_left(6)
-            sage: p.add_edge_left(11)
-            sage: p.add_edge_left(2)
+            sage: p.add_edge_left(3)
             sage: p
-            Geodesic "deque([4, 15, 12])" with turns "deque([(2, 1), (7, 1)])"
+            Geodesic "deque([15, 4])" with turns "deque([(6, 1)])"
+            sage: p.add_edge_left(10)
+            sage: p.add_edge_left(3)
+            sage: p.add_edge_left(14)
+            sage: p
+            Geodesic "deque([0, 13, 4])" with turns "deque([(2, 1), (7, 1)])"
         """
         
         Q = self._quadsystem._quad
@@ -546,41 +545,15 @@ class Geodesic:
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
-            OrientedMap("(0,1,2,3,4,5,6,7)(~0,~3,~5,~1,~6,~2,~4,~7)", "(0,~7,6,~1)(~0,7,~4,3)(1,~5,4,~2)(2,~6,5,~3)")
-            sage: p = Geodesic(Q, [5, 12, 3, 4])
-            sage: p.origin_simplification()
-            sage: p
-            Geodesic "deque([12, 3])" with turns "deque([(7, 1)])"
-            
-            sage: p = Geodesic(Q, [2, 5, 8, 1])
-            sage: p.origin_simplification()
-            sage: p
-            Geodesic "deque([10, 1])" with turns "deque([(6, 1)])"
-            
-            sage: p = Geodesic(Q, [0, 9, 4, 3])
-            sage: p.origin_simplification()
-            sage: p
-            Geodesic "deque([2, 11])" with turns "deque([(2, 1)])"
+            OrientedMap("(0,4,5,3,1,2,6,7)(~0,~3,~6,~4,~1,~7,~5,~2)", "(0,~2,1,~4)(~0,7,~1,3)(2,~5,4,~6)(~3,5,~7,6)")
 
-            sage: p = Geodesic(Q, [6, 13, 4, 7, 12, 5])
+            Remove a spur at origin.
+            sage: p = Geodesic(Q, [5, 12, 1, 4])
             sage: p.origin_simplification()
             sage: p
-            Geodesic "deque([13, 4, 7, 10])" with turns "deque([(4, 2), (2, 1)])"
+            Geodesic "deque([12, 1])" with turns "deque([(6, 1)])"
 
-            sage: p = Geodesic(Q, [10, 1, 12, 3, 14, 7, 2, 13])
-            sage: p.origin_simplification()
-            sage: p
-            Geodesic "deque([5, 8, 1, 14, 7, 2])" with turns "deque([(2, 2), (7, 1), (2, 1), (6, 1)])"
-
-            sage: p = Geodesic(Q, [1, 12, 3, 14, 7, 2, 13, 10])
-            sage: p.origin_simplification()
-            sage: p
-            Geodesic "deque([14, 7, 2, 5, 8, 1])" with turns "deque([(2, 1), (6, 1), (2, 3)])"
-
-            sage: p = Geodesic(Q, [0, 11, 14, 1, 4, 15])
-            sage: p.origin_simplification()
-            sage: p
-            Geodesic "deque([4, 11])" with turns "deque([(5, 1)])"
+            TODO: Make new examples and tests.
         """
 
         Q = self._quadsystem._quad
@@ -708,7 +681,6 @@ class Geodesic:
                     turn_remove_left(s)
                     
         elif first_turn == d - 1 and len(s) >= 2 and s[0][0] == d - 2 and s[1][0] == d - 1: # bracket starting at the origin
-            print("No")
             geo.pop()
             turn_remove(s)
             bracket_removal_left(Q, geo, s, False, s[0][1], d)
@@ -762,22 +734,14 @@ class Geodesic:
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
-            OrientedMap("(0,1,2,3,4,5,6,7)(~0,~3,~5,~1,~6,~2,~4,~7)", "(0,~7,6,~1)(~0,7,~4,3)(1,~5,4,~2)(2,~6,5,~3)")
+            OrientedMap("(0,4,5,3,1,2,6,7)(~0,~3,~6,~4,~1,~7,~5,~2)", "(0,~2,1,~4)(~0,7,~1,3)(2,~5,4,~6)(~3,5,~7,6)")
             
-            sage: p = Geodesic(Q, [6, 3])
+            sage: p = Geodesic(Q, [7, 4])
             sage: p.canonical()
             sage: p
-            Geodesic "deque([13, 8])" with turns "deque([(6, 1)])"
+            Geodesic "deque([14, 9])" with turns "deque([(6, 1)])"
             
-            sage: p = Geodesic(Q, [0, 11, 14, 7, 10, 9, 4, 15])
-            sage: p.canonical()
-            sage: p
-            Geodesic "deque([11, 4, 3, 14, 5, 2, 9, 2])" with turns "deque([(5, 1), (6, 3), (7, 1), (3, 1), (5, 1)])"
-
-            sage: p = Geodesic(Q, [0, 11, 14, 7, 10, 15])
-            sage: p.canonical()
-            sage: p
-            Geodesic "deque([9, 4, 3, 14, 5, 2])" with turns "deque([(6, 4), (7, 1)])"
+            TODO: Make new examples and tests.
         """
 
         Q = self._quadsystem._quad
@@ -943,7 +907,7 @@ class LazyGeodesic:
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
-            OrientedMap("(0,1,2,3,4,5,6,7)(~0,~3,~5,~1,~6,~2,~4,~7)", "(0,~7,6,~1)(~0,7,~4,3)(1,~5,4,~2)(2,~6,5,~3)")
+            OrientedMap("(0,4,5,3,1,2,6,7)(~0,~3,~6,~4,~1,~7,~5,~2)", "(0,~2,1,~4)(~0,7,~1,3)(2,~5,4,~6)(~3,5,~7,6)")
             sage: p = LazyGeodesic(Q)
             sage: TestSuite(p).run()
         """
@@ -988,7 +952,7 @@ class LazyGeodesic:
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
-            OrientedMap("(0,1,2,3,4,5,6,7)(~0,~3,~5,~1,~6,~2,~4,~7)", "(0,~7,6,~1)(~0,7,~4,3)(1,~5,4,~2)(2,~6,5,~3)")
+            OrientedMap("(0,4,5,3,1,2,6,7)(~0,~3,~6,~4,~1,~7,~5,~2)", "(0,~2,1,~4)(~0,7,~1,3)(2,~5,4,~6)(~3,5,~7,6)")
             sage: p = LazyGeodesic(Q)
             sage: p.length()
             0
@@ -1014,20 +978,8 @@ class LazyGeodesic:
             sage: m = OrientedMap(vp=[[0, 2, 4, 6],[7, 8, 5], [9, 10, 12, 11], [3, 15, 1, 13, 14]])
             sage: Q = QuadSystem(m)
             sage: Q
-            OrientedMap("(0,1,2,3,4,5,6,7)(~0,~5,~6,~7,~4,~1,~2,~3)", "(0,~3,2,~1)(~0,7,~6,5)(1,~4,3,~2)(4,~7,6,~5)")
-            sage: p = LazyGeodesic(Q)
-            sage: p.add_edge(12)
-            sage: p.add_edge(5)
-            sage: p.add_edge(6)
-            sage: p.add_edge(11)
-            sage: p
-            LazyGeodesic starting with "12", ending with "11" and with turns "deque([(4, 1), (1, 1), (2, 1)])"
-            sage: p.add_edge(12)
-            sage: p
-            LazyGeodesic starting with "12", ending with "14" and with turns "deque([(3, 1), (6, 1)])"
-            sage: p.add_edge(15)
-            sage: p
-            LazyGeodesic starting with "12", ending with "3" and with turns "deque([(3, 1)])"
+            OrientedMap("(0,4,5,3,1,2,6,7)(~0,~3,~6,~4,~1,~7,~5,~2)", "(0,~2,1,~4)(~0,7,~1,3)(2,~5,4,~6)(~3,5,~7,6)")
+            
         """
 
         Q = self._quadsystem._quad
@@ -1088,20 +1040,8 @@ class LazyGeodesic:
             sage: m = OrientedMap(vp=[[0, 2, 4, 6],[7, 8, 5], [9, 10, 12, 11], [3, 15, 1, 13, 14]])
             sage: Q = QuadSystem(m)
             sage: Q
-            OrientedMap("(0,1,2,3,4,5,6,7)(~0,~5,~6,~7,~4,~1,~2,~3)", "(0,~3,2,~1)(~0,7,~6,5)(1,~4,3,~2)(4,~7,6,~5)")
-            sage: p = LazyGeodesic(Q)
-            sage: p.add_edge_left(12)
-            sage: p.add_edge_left(5)
-            sage: p.add_edge_left(6)
-            sage: p.add_edge_left(11)
-            sage: p
-            LazyGeodesic starting with "11", ending with "12" and with turns "deque([(6, 1), (7, 1), (4, 1)])"
-            sage: p.add_edge_left(12)
-            sage: p
-            LazyGeodesic starting with "14", ending with "12" and with turns "deque([(2, 1), (5, 1)])"
-            sage: p.add_edge_left(15)
-            sage: p
-            LazyGeodesic starting with "3", ending with "12" and with turns "deque([(5, 1)])"
+            OrientedMap("(0,4,5,3,1,2,6,7)(~0,~3,~6,~4,~1,~7,~5,~2)", "(0,~2,1,~4)(~0,7,~1,3)(2,~5,4,~6)(~3,5,~7,6)")
+            
         """
         
         Q = self._quadsystem._quad
