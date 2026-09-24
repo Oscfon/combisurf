@@ -335,7 +335,7 @@ class Geodesic:
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
-            OrientedMap("(0,1,2,3,4,5,6,7)(~0,~3,~5,~1,~6,~2,~4,~7)", "(0,~7,6,~1)(~0,7,~4,3)(1,~5,4,~2)(2,~6,5,~3)")
+            OrientedMap("(0,4,5,3,1,2,6,7)(~0,~3,~6,~4,~1,~7,~5,~2)", "(0,~2,1,~4)(~0,7,~1,3)(2,~5,4,~6)(~3,5,~7,6)")
             sage: p = Geodesic(Q)
             sage: TestSuite(p).run()
         """
@@ -486,6 +486,7 @@ class Geodesic:
             sage: p.add_edge_left(9)
             sage: p.add_edge_left(6)
             sage: p.add_edge_left(9)
+            sage: p
             Geodesic "deque([9, 6, 9, 10])" with turns "deque([(2, 2), (1, 1)])"
             sage: p.add_edge_left(12)
             sage: p
@@ -948,7 +949,7 @@ class LazyGeodesic:
         r"""
         EXAMPLES::
 
-            sage: from combisurf import OrientedMap, QuadSystem, Geodesic
+            sage: from combisurf import OrientedMap, QuadSystem, LazyGeodesic
             sage: m = OrientedMap(vp=[[0, 2, 4, 6], [5, 8, 10, 12], [3, 11, 13, 7, 1, 9]])
             sage: Q = QuadSystem(m)
             sage: Q
@@ -1040,7 +1041,7 @@ class LazyGeodesic:
             sage: m = OrientedMap(vp=[[0, 2, 4, 6],[7, 8, 5], [9, 10, 12, 11], [3, 15, 1, 13, 14]])
             sage: Q = QuadSystem(m)
             sage: Q
-            OrientedMap("(0,4,5,3,1,2,6,7)(~0,~3,~6,~4,~1,~7,~5,~2)", "(0,~2,1,~4)(~0,7,~1,3)(2,~5,4,~6)(~3,5,~7,6)")
+            OrientedMap("(0,3,4,5,1,6,7,2)(~0,~6,~4,~5,~1,~3,~7,~2)", "(0,~2,7,~3)(~0,2,~7,6)(1,~5,4,~6)(~1,5,~4,3)")
             
         """
         
