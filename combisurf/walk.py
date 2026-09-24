@@ -90,9 +90,9 @@ class Walk:
             if elt >= size:
                 raise ValueError(f"edge {elt} does not belong to the oriented map {self._oriented_map}.")
             elif not previous is None:
-                current = self.oriented_map._ep(previous)
-                while current != self.oriented_map._ep(previous) or current != elt:
-                    current = self.oriented_map._vp[current]
+                current = self._oriented_map._ep(previous)
+                while current != self._oriented_map._ep(previous) or current != elt:
+                    current = self._oriented_map._vp[current]
                 if current != elt:
                     raise ValueError(f"edge {elt} does not follow edge {previous}.")
             previous = elt
